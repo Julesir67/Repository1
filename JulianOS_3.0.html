@@ -1,0 +1,1460 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>JulianOS v6</title>
+<style>
+*{margin:0;padding:0;box-sizing:border-box;font-family:'Segoe UI',sans-serif}
+html,body{width:100%;height:100%;overflow:hidden}
+body{background:#000;color:#fff}
+@keyframes bootPulse{from{text-shadow:0 0 20px cyan,0 0 20px violet,0 0 20px lightgreen}to{text-shadow:0 0 50px cyan,0 0 50px violet,0 0 50px lightgreen}}
+@keyframes shake{0%{transform:translateX(0)}25%{transform:translateX(-8px)}50%{transform:translateX(8px)}75%{transform:translateX(-4px)}100%{transform:translateX(0)}}
+@keyframes fadeIn{from{opacity:0}to{opacity:1}}
+@keyframes popIn{from{opacity:0;transform:scale(.92)}to{opacity:1;transform:scale(1)}}
+@keyframes menuIn{from{opacity:0;transform:translateY(-8px) scale(.97)}to{opacity:1;transform:translateY(0) scale(1)}}
+@keyframes badgePulse{0%,100%{opacity:1}50%{opacity:.4}}
+@keyframes slideInChat{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:translateY(0)}}
+@keyframes subtlePulse{0%,100%{opacity:.3}50%{opacity:.7}}
+@keyframes floatShape{from{transform:translateY(0)}to{transform:translateY(-8px)}}
+@keyframes installPop{from{opacity:0;transform:scale(.88) translateY(10px)}to{opacity:1;transform:scale(1) translateY(0)}}
+@keyframes shieldPulse{0%,100%{opacity:.7;transform:scale(1)}50%{opacity:1;transform:scale(1.04)}}
+@keyframes tileIn{from{opacity:0;transform:translateY(16px) scale(.96)}to{opacity:1;transform:translateY(0) scale(1)}}
+@keyframes checkPop{from{transform:scale(0) rotate(-20deg);opacity:0}to{transform:scale(1) rotate(0deg);opacity:1}}
+@keyframes warnPulse{0%,100%{box-shadow:0 0 0 rgba(255,165,0,0)}50%{box-shadow:0 0 18px rgba(255,165,0,.3)}}
+@keyframes noResultsPop{from{opacity:0;transform:scale(.9)}to{opacity:1;transform:scale(1)}}
+@keyframes resultIn{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:translateY(0)}}
+@keyframes lightShimmer{0%{background-position:0% 50%}50%{background-position:100% 50%}100%{background-position:0% 50%}}
+@keyframes lightGlow{0%,100%{box-shadow:0 0 20px rgba(100,180,255,.2),0 0 40px rgba(150,200,255,.1)}50%{box-shadow:0 0 30px rgba(100,180,255,.35),0 0 60px rgba(150,200,255,.2)}}
+
+/* BOOT */
+#boot{position:fixed;inset:0;display:flex;justify-content:center;align-items:center;flex-direction:column;background:#000;gap:16px;z-index:9999}
+.logo{font-size:110px;text-shadow:0 0 30px cyan,0 0 30px violet,0 0 30px lightgreen;animation:bootPulse 2s infinite alternate}
+#boot h1{font-size:28px;font-weight:300;letter-spacing:8px;color:rgba(255,255,255,.7)}
+
+/* HAMBURGER */
+.menuBtn{position:fixed;top:20px;right:24px;width:40px;height:40px;border-radius:10px;background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.1);cursor:pointer;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:5px;z-index:10000;transition:background .2s,opacity .2s,visibility .2s}
+.menuBtn:hover{background:rgba(255,255,255,.12)}
+.menuBtn span{display:block;width:18px;height:1.5px;background:rgba(255,255,255,.7);border-radius:2px}
+.menuBtn.hidden-btn{opacity:0;visibility:hidden;pointer-events:none}
+.sysMenu{position:fixed;top:68px;right:16px;background:rgba(18,18,18,.98);border:1px solid rgba(255,255,255,.1);border-radius:14px;padding:8px;z-index:10001;min-width:190px;display:none;backdrop-filter:blur(20px);box-shadow:0 8px 40px rgba(0,0,0,.6)}
+.sysMenu.open{display:block;animation:menuIn .18s ease}
+.menuItem{padding:11px 16px;border-radius:8px;cursor:pointer;font-size:14px;color:rgba(255,255,255,.8);letter-spacing:.5px;display:flex;align-items:center;gap:10px;transition:background .15s;user-select:none}
+.menuItem:hover{background:rgba(255,255,255,.08);color:#fff}
+.menuItem.danger:hover{background:rgba(255,60,60,.15);color:#ff6b6b}
+.menuDivider{height:1px;background:rgba(255,255,255,.07);margin:4px 0}
+.menuLabel{padding:8px 16px 4px;font-size:10px;letter-spacing:3px;color:rgba(255,255,255,.25);text-transform:uppercase}
+
+/* DIALOGS */
+#confirmOverlay{position:fixed;inset:0;background:rgba(0,0,0,.75);z-index:9000;display:none;align-items:center;justify-content:center;backdrop-filter:blur(8px)}
+#confirmOverlay.show{display:flex;animation:fadeIn .2s ease}
+.confirmBox{background:rgba(18,18,18,.98);border:1px solid rgba(255,255,255,.1);border-radius:20px;padding:44px 52px;display:flex;flex-direction:column;align-items:center;gap:20px;max-width:380px;width:90%;box-shadow:0 0 80px rgba(0,0,0,.8);animation:popIn .22s cubic-bezier(.34,1.56,.64,1)}
+.confirmIcon{font-size:44px;line-height:1}
+.confirmTitle{font-size:20px;font-weight:400;letter-spacing:3px;color:rgba(255,255,255,.9);text-align:center}
+.confirmText{font-size:13px;color:rgba(255,255,255,.4);letter-spacing:.5px;text-align:center;line-height:1.7;white-space:pre-line}
+.confirmBtns{display:flex;gap:12px;margin-top:8px}
+.confirmBtnCancel{padding:11px 28px;border-radius:8px;background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.1);color:rgba(255,255,255,.6);font-size:14px;cursor:pointer;letter-spacing:1px;transition:background .15s}
+.confirmBtnCancel:hover{background:rgba(255,255,255,.1);color:#fff}
+.confirmBtnOk{padding:11px 28px;border-radius:8px;border:none;color:#fff;font-size:14px;cursor:pointer;letter-spacing:1px;transition:all .15s}
+.confirmBtnOk.restart{background:linear-gradient(135deg,rgba(0,200,255,.4),rgba(0,120,255,.4));border:1px solid rgba(0,200,255,.25)}
+.confirmBtnOk.restart:hover{background:linear-gradient(135deg,rgba(0,200,255,.6),rgba(0,120,255,.6));box-shadow:0 0 20px rgba(0,200,255,.25)}
+.confirmBtnOk.reset{background:linear-gradient(135deg,rgba(255,60,60,.35),rgba(180,0,100,.35));border:1px solid rgba(255,60,60,.25)}
+.confirmBtnOk.reset:hover{background:linear-gradient(135deg,rgba(255,60,60,.55),rgba(180,0,100,.55))}
+
+/* DOWNLOAD MODAL */
+#dlModal{position:fixed;inset:0;background:rgba(0,0,0,.78);z-index:19000;display:none;align-items:center;justify-content:center;backdrop-filter:blur(12px)}
+#dlModal.show{display:flex;animation:fadeIn .2s ease}
+.dlBox{background:rgba(16,16,16,.99);border:1px solid rgba(255,255,255,.09);border-radius:22px;padding:44px 52px;display:flex;flex-direction:column;align-items:center;gap:18px;max-width:360px;width:90%;box-shadow:0 0 100px rgba(0,0,0,.9);animation:installPop .3s cubic-bezier(.34,1.56,.64,1)}
+.dlAppIcon{font-size:52px;filter:drop-shadow(0 0 16px rgba(0,200,255,.4))}
+.dlAppName{font-size:18px;font-weight:500;letter-spacing:2px;color:#fff}
+.dlAppSub{font-size:11px;color:rgba(255,255,255,.3);letter-spacing:2px;text-transform:uppercase}
+.dlStatusText{font-size:13px;color:rgba(255,255,255,.5);letter-spacing:1px;margin-top:4px}
+.dlTrack{width:100%;height:5px;border-radius:3px;background:rgba(255,255,255,.08);overflow:hidden;margin-top:2px}
+.dlBar{height:100%;border-radius:3px;background:linear-gradient(90deg,#00c8ff,#b400ff);width:0%;box-shadow:0 0 10px rgba(0,200,255,.5)}
+.dlDoneText{font-size:13px;color:rgba(0,220,100,.9);letter-spacing:1px;display:none}
+
+/* PROGRESS BAR */
+#resetBar{position:fixed;top:0;left:0;right:0;height:2px;z-index:99999;display:none}
+#resetBarInner{height:100%;width:0;background:linear-gradient(90deg,#b400ff,#00c8ff);transition:none;border-radius:0 2px 2px 0;box-shadow:0 0 8px rgba(0,200,255,.6)}
+#resetBar.active{display:block}
+
+/* LOGIN */
+#login{position:fixed;inset:0;display:flex;justify-content:center;align-items:center;flex-direction:column;background:radial-gradient(ellipse at 50% 0%,rgba(0,200,255,.15),transparent 60%),#000;z-index:500}
+.loginBox{padding:60px 70px;border-radius:24px;background:rgba(255,255,255,.04);backdrop-filter:blur(20px);border:1px solid rgba(255,255,255,.08);display:flex;flex-direction:column;align-items:center;gap:32px;box-shadow:0 0 80px rgba(0,200,255,.08)}
+.loginBox .avatar{width:80px;height:80px;border-radius:50%;background:linear-gradient(135deg,rgba(0,200,255,.3),rgba(180,0,255,.3));display:flex;align-items:center;justify-content:center;font-size:36px;border:1px solid rgba(255,255,255,.1)}
+.loginBox .username{font-size:18px;font-weight:400;letter-spacing:2px;color:rgba(255,255,255,.8)}
+.loginBtn{position:relative;padding:13px 48px;border:none;border-radius:8px;background:linear-gradient(135deg,rgba(0,200,255,.25),rgba(180,0,255,.25));color:#fff;font-size:15px;font-weight:500;letter-spacing:2px;cursor:pointer;overflow:hidden;transition:transform .15s,box-shadow .15s;border:1px solid rgba(255,255,255,.15)}
+.loginBtn::before{content:'';position:absolute;inset:0;background:linear-gradient(135deg,rgba(0,200,255,.4),rgba(180,0,255,.4));opacity:0;transition:opacity .2s}
+.loginBtn:hover{transform:translateY(-1px);box-shadow:0 0 24px rgba(0,200,255,.3),0 0 24px rgba(180,0,255,.2)}
+.loginBtn:hover::before{opacity:1}
+.loginHint{font-size:11px;color:rgba(255,255,255,.3);letter-spacing:1px}
+.hidden{display:none!important}
+
+/* PW OVERLAY */
+#pwOverlay{position:fixed;inset:0;display:flex;justify-content:center;align-items:center;background:radial-gradient(ellipse at 50% 0%,rgba(180,0,255,.15),transparent 60%),#000;z-index:600}
+.pwOverlayBox{padding:60px 70px;border-radius:24px;background:rgba(255,255,255,.04);backdrop-filter:blur(20px);border:1px solid rgba(255,255,255,.08);display:flex;flex-direction:column;align-items:center;gap:24px;position:relative}
+.pwOverlayBox h2{font-size:22px;font-weight:300;letter-spacing:6px}
+.pwOverlayBox .lockIcon{font-size:48px}
+#overlayError{color:#ff4444;font-size:13px;letter-spacing:1px;min-height:20px;font-weight:500}
+/* X and minus buttons on pw overlay */
+.pwOverlayWinBtns{position:absolute;top:16px;right:16px;display:flex;gap:8px}
+.pwOverlayWinBtn{width:28px;height:28px;border-radius:6px;background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.08);display:flex;align-items:center;justify-content:center;cursor:pointer;font-size:12px;color:rgba(255,255,255,.5);transition:background .15s}
+.pwOverlayWinBtn:hover{background:rgba(255,255,255,.14);color:#fff}
+.pwOverlayWinBtn.close:hover{background:rgba(200,50,50,.6);color:#fff}
+
+/* ADMIN PW GATE — fullscreen overlay over adminOptions */
+#adminPwGate{position:absolute;inset:0;background:rgba(8,8,8,.98);display:flex;flex-direction:column;align-items:center;justify-content:center;gap:22px;z-index:50;backdrop-filter:blur(20px)}
+#adminPwGate .gateIcon{font-size:48px}
+#adminPwGate h2{font-size:20px;font-weight:300;letter-spacing:5px;color:rgba(255,255,255,.85)}
+#adminPwGateInput{padding:12px 18px;background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.14);border-radius:10px;color:#fff;font-size:15px;outline:none;width:240px;text-align:center;letter-spacing:2px}
+#adminPwGateInput:focus{border-color:rgba(0,200,255,.5);box-shadow:0 0 12px rgba(0,200,255,.15)}
+#adminPwGateErr{color:#ff4444;font-size:13px;letter-spacing:1px;min-height:18px;font-weight:500}
+/* Win buttons inside gate */
+.adminGateWinBtns{position:absolute;top:12px;right:12px;display:flex;gap:6px}
+.adminGateWinBtn{width:28px;height:28px;border-radius:6px;background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.08);display:flex;align-items:center;justify-content:center;cursor:pointer;font-size:12px;color:rgba(255,255,255,.5);transition:background .15s}
+.adminGateWinBtn:hover{background:rgba(255,255,255,.14);color:#fff}
+.adminGateWinBtn.close:hover{background:rgba(200,50,50,.6);color:#fff}
+
+/* DESKTOP */
+#desktop{display:none;width:100vw;height:100vh;position:relative;overflow:hidden}
+#desktopBg{position:absolute;inset:0;z-index:0;transition:background .5s}
+.desktopIcons{display:flex;gap:20px;padding:28px;flex-wrap:wrap;position:relative;z-index:1}
+.desktopIcon{width:64px;height:64px;border-radius:14px;background:rgba(255,255,255,.07);display:flex;flex-direction:column;align-items:center;justify-content:center;cursor:pointer;font-size:26px;transition:background .15s,transform .15s;border:1px solid rgba(255,255,255,.05);gap:4px}
+.desktopIcon span{font-size:10px;color:rgba(255,255,255,.5);letter-spacing:.5px}
+.desktopIcon:hover{background:rgba(255,255,255,.14);transform:scale(1.07)}
+
+/* TASKBAR — fixed above bottom edge */
+.taskbar{position:absolute;bottom:0;left:0;right:0;height:56px;background:rgba(12,12,12,.95);backdrop-filter:blur(24px);border-top:1px solid rgba(255,255,255,.09);display:flex;align-items:center;padding:0 8px;z-index:9999;gap:2px}
+.taskIcon{width:44px;height:42px;border-radius:10px;background:transparent;display:flex;align-items:center;justify-content:center;cursor:pointer;font-size:19px;position:relative;transition:background .15s;border:1px solid transparent;flex-shrink:0}
+.taskIcon:hover{background:rgba(255,255,255,.07)}
+.taskIcon::after{content:'';position:absolute;bottom:2px;left:50%;transform:translateX(-50%);height:3px;width:0;border-radius:2px 2px 0 0;transition:width .2s,background .2s}
+.taskIcon.minimized{background:rgba(255,255,255,.06)}
+.taskIcon.minimized::after{width:6px;background:rgba(255,255,255,.4)}
+.taskIcon.active{background:rgba(255,255,255,.09)}
+.taskIcon.active::after{width:24px;background:rgba(0,200,255,.95)}
+.clock{margin-left:auto;font-size:12px;color:rgba(255,255,255,.65);letter-spacing:.5px;padding:0 10px;flex-shrink:0;white-space:nowrap}
+
+/* WINDOWS */
+.window{position:absolute;left:0;top:0;width:100%;height:calc(100% - 56px);background:rgba(13,13,13,.97);backdrop-filter:blur(30px);display:none;z-index:1;overflow:hidden}
+.titlebar{height:44px;background:rgba(255,255,255,.04);border-bottom:1px solid rgba(255,255,255,.06);display:flex;justify-content:space-between;align-items:center;padding:0 16px;user-select:none;flex-shrink:0}
+.titlebar span.title{font-size:13px;color:rgba(255,255,255,.7);letter-spacing:1px}
+.winBtns{display:flex;gap:8px}
+.winBtn{width:28px;height:28px;border-radius:6px;background:rgba(255,255,255,.06);display:flex;align-items:center;justify-content:center;cursor:pointer;font-size:12px;transition:background .15s;border:1px solid rgba(255,255,255,.06)}
+.winBtn:hover{background:rgba(255,255,255,.15)}
+.winBtn.close:hover{background:rgba(200,50,50,.6)}
+.content{height:calc(100% - 44px);padding:16px;overflow:auto}
+input[type=password]{padding:12px 16px;margin:8px;background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.12);border-radius:8px;color:#fff;font-size:15px;outline:none;width:100%}
+input[type=password]:focus{border-color:rgba(0,200,255,.5);box-shadow:0 0 12px rgba(0,200,255,.15)}
+
+/* NOTES MENU BAR */
+.notesMenuBar{height:32px;background:rgba(255,255,255,.03);border-bottom:1px solid rgba(255,255,255,.06);display:flex;align-items:center;padding:0 8px;gap:4px;flex-shrink:0;position:relative;z-index:5}
+.notesMenuBtn{padding:4px 12px;border-radius:5px;font-size:13px;color:rgba(255,255,255,.65);cursor:pointer;letter-spacing:.3px;user-select:none;transition:background .12s}
+.notesMenuBtn:hover{background:rgba(255,255,255,.09);color:#fff}
+.notesMenuBtn.active{background:rgba(0,200,255,.12);color:#00c8ff}
+.notesDropdown{position:absolute;top:32px;left:0;background:rgba(16,16,16,.98);border:1px solid rgba(255,255,255,.1);border-radius:10px;padding:6px;min-width:180px;display:none;box-shadow:0 8px 32px rgba(0,0,0,.7);backdrop-filter:blur(20px);z-index:100}
+.notesDropdown.open{display:block;animation:menuIn .15s ease}
+.notesDropItem{padding:9px 14px;border-radius:6px;font-size:13px;color:rgba(255,255,255,.8);cursor:pointer;letter-spacing:.3px;display:flex;align-items:center;justify-content:space-between;gap:20px;transition:background .12s}
+.notesDropItem:hover{background:rgba(255,255,255,.08);color:#fff}
+.notesDropItem .shortcut{font-size:11px;color:rgba(255,255,255,.3);letter-spacing:.5px}
+.notesDropDivider{height:1px;background:rgba(255,255,255,.07);margin:4px 0}
+.notesUnsavedDot{width:7px;height:7px;border-radius:50%;background:#00c8ff;box-shadow:0 0 6px rgba(0,200,255,.8);display:none;margin-left:6px;flex-shrink:0}
+.notesUnsavedDot.show{display:inline-block}
+.notesContentWrap{height:calc(100% - 44px - 32px);display:flex;flex-direction:column;overflow:hidden}
+.notesTextarea{flex:1;padding:14px 16px;background:#0d0d0d;color:#e0e0e0;border:none;resize:none;font-size:14px;line-height:1.6;outline:none;font-family:'Segoe UI',sans-serif}
+
+/* VIRUS DASHBOARD */
+.virusDashboard{display:grid;grid-template-columns:1fr 1fr;grid-template-rows:1fr 1fr;gap:16px;padding:24px;height:100%}
+.virusTile{border-radius:20px;background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.08);display:flex;flex-direction:column;align-items:center;justify-content:center;gap:14px;padding:32px 24px;position:relative;overflow:hidden;transition:background .2s,border-color .3s,box-shadow .3s;animation:tileIn .4s cubic-bezier(.34,1.56,.64,1) both;cursor:default}
+.virusTile:nth-child(1){animation-delay:.05s}.virusTile:nth-child(2){animation-delay:.12s}.virusTile:nth-child(3){animation-delay:.19s}.virusTile:nth-child(4){animation-delay:.26s}
+.virusTile::before{content:'';position:absolute;inset:0;border-radius:20px;opacity:0;transition:opacity .3s;pointer-events:none}
+.virusTile.ok{border-color:rgba(0,220,100,.18);background:rgba(0,220,100,.04)}
+.virusTile.ok::before{background:radial-gradient(ellipse at 50% 0%,rgba(0,220,100,.12),transparent 65%);opacity:1}
+.virusTile.warn{border-color:rgba(255,165,0,.25);background:rgba(255,165,0,.04);animation:tileIn .4s cubic-bezier(.34,1.56,.64,1) both,warnPulse 3s ease-in-out infinite}
+.virusTile.warn::before{background:radial-gradient(ellipse at 50% 0%,rgba(255,165,0,.12),transparent 65%);opacity:1}
+.virusTileIcon{font-size:36px;line-height:1}
+.virusTile.ok .virusTileIcon{filter:drop-shadow(0 0 14px rgba(0,220,100,.5))}
+.virusTile.warn .virusTileIcon{filter:drop-shadow(0 0 14px rgba(255,165,0,.5))}
+.virusTileTitle{font-size:13px;font-weight:600;letter-spacing:2px;text-transform:uppercase;color:rgba(255,255,255,.55)}
+.virusTileCheck{font-size:18px;animation:checkPop .4s cubic-bezier(.34,1.56,.64,1) both;animation-delay:.5s;opacity:0;animation-fill-mode:both}
+.virusTileText{font-size:13px;text-align:center;line-height:1.55;letter-spacing:.2px}
+.virusTile.ok .virusTileText{color:rgba(0,220,100,.8)}
+.virusTile.warn .virusTileText{color:rgba(255,185,50,.8)}
+
+/* ══════════════════════════════════════════
+   STORE — Light-themed redesign
+   ══════════════════════════════════════════ */
+.storeContent{padding:40px;display:flex;flex-direction:column;gap:0;min-height:100%}
+.storeBanner{background:linear-gradient(135deg,#0a1628 0%,#0d2040 40%,#1a2f50 70%,#0f1e38 100%);border-radius:20px;padding:36px 40px;margin-bottom:32px;position:relative;overflow:hidden;border:1px solid rgba(100,160,255,.18)}
+.storeBanner::before{content:'';position:absolute;inset:0;background:radial-gradient(ellipse at 20% 50%,rgba(80,160,255,.12),transparent 60%),radial-gradient(ellipse at 80% 20%,rgba(120,200,255,.08),transparent 50%);pointer-events:none}
+.storeBanner::after{content:'☀';position:absolute;right:40px;top:50%;transform:translateY(-50%);font-size:80px;opacity:.08;line-height:1}
+.storeBannerTitle{font-size:26px;font-weight:700;letter-spacing:1px;color:#fff;position:relative;z-index:1}
+.storeBannerSub{font-size:13px;color:rgba(140,190,255,.7);margin-top:6px;letter-spacing:.5px;position:relative;z-index:1}
+.storeBannerBadge{display:inline-flex;align-items:center;gap:6px;margin-top:14px;padding:6px 14px;border-radius:20px;background:rgba(100,170,255,.12);border:1px solid rgba(100,170,255,.25);font-size:11px;letter-spacing:2px;color:rgba(140,200,255,.8);text-transform:uppercase;position:relative;z-index:1}
+.storeTitle{font-size:11px;letter-spacing:4px;color:rgba(255,255,255,.3);text-transform:uppercase;margin-bottom:20px}
+.storeGrid{display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:0}
+.storeCard{display:flex;flex-direction:column;gap:0;padding:0;border-radius:20px;background:linear-gradient(145deg,rgba(10,22,48,.9),rgba(8,16,36,.95));border:1px solid rgba(80,140,255,.14);transition:transform .2s,border-color .2s,box-shadow .2s;overflow:hidden;position:relative}
+.storeCard:hover{transform:translateY(-2px);border-color:rgba(100,170,255,.3);box-shadow:0 8px 32px rgba(50,120,255,.12)}
+.storeCardTop{padding:28px 28px 20px;flex:1}
+.storeCardIconWrap{width:64px;height:64px;border-radius:16px;background:linear-gradient(135deg,rgba(40,100,200,.25),rgba(80,160,255,.15));border:1px solid rgba(80,160,255,.2);display:flex;align-items:center;justify-content:center;font-size:32px;margin-bottom:16px;box-shadow:0 4px 16px rgba(0,100,255,.1)}
+.storeCardName{font-size:17px;font-weight:700;letter-spacing:.3px;color:#fff;margin-bottom:4px}
+.storeCardSub{font-size:10px;letter-spacing:2.5px;color:rgba(100,170,255,.6);text-transform:uppercase;margin-bottom:10px}
+.storeCardDesc{font-size:13px;color:rgba(200,220,255,.55);line-height:1.65;letter-spacing:.2px}
+.storeCardBottom{padding:16px 28px 20px;border-top:1px solid rgba(80,140,255,.1);display:flex;align-items:center;justify-content:space-between;gap:12px}
+.storeCardMeta{display:flex;align-items:center;gap:10px}
+.storeRating{font-size:11px;color:rgba(255,210,80,.9);letter-spacing:.5px}
+.storeCategory{font-size:10px;letter-spacing:2px;color:rgba(100,170,255,.6);text-transform:uppercase;background:rgba(80,140,255,.1);padding:3px 9px;border-radius:6px;border:1px solid rgba(80,140,255,.15)}
+.storeDownloadBtn{padding:10px 20px;border-radius:10px;background:linear-gradient(135deg,rgba(60,130,255,.3),rgba(40,100,220,.3));border:1px solid rgba(80,160,255,.35);color:rgba(140,200,255,.95);font-size:13px;font-weight:600;letter-spacing:.5px;cursor:pointer;transition:all .2s;white-space:nowrap;flex-shrink:0;font-family:inherit}
+.storeDownloadBtn:hover{background:linear-gradient(135deg,rgba(60,130,255,.5),rgba(40,100,220,.5));box-shadow:0 0 20px rgba(80,160,255,.25);transform:translateY(-1px)}
+.storeDownloadBtn.installed{background:rgba(0,180,80,.1);border-color:rgba(0,200,100,.3);color:rgba(0,220,100,.8);cursor:default;pointer-events:none}
+
+/* BROWSER */
+#browserApp{display:flex;flex-direction:column;height:100%;background:#070707}
+.browserBar{height:52px;background:rgba(14,14,14,.98);border-bottom:1px solid rgba(255,255,255,.07);display:flex;align-items:center;padding:0 14px;gap:10px;flex-shrink:0}
+.browserNavBtn{width:30px;height:30px;border-radius:8px;background:rgba(255,255,255,.05);border:1px solid rgba(255,255,255,.07);display:flex;align-items:center;justify-content:center;cursor:pointer;font-size:14px;color:rgba(255,255,255,.4);transition:background .15s,color .15s;flex-shrink:0;user-select:none}
+.browserNavBtn:hover{background:rgba(255,255,255,.1);color:rgba(255,255,255,.8)}
+.browserUrlWrap{flex:1;position:relative;display:flex;align-items:center}
+.browserUrlLock{position:absolute;left:12px;font-size:11px;color:rgba(0,220,100,.55);pointer-events:none;z-index:1}
+.browserUrlInput{width:100%;height:34px;background:rgba(255,255,255,.05);border:1.5px solid rgba(255,255,255,.1);border-radius:20px;color:#fff;font-size:13px;padding:0 40px 0 30px;outline:none;letter-spacing:.3px;transition:border-color .2s,background .2s,box-shadow .2s;font-family:'Segoe UI',sans-serif}
+.browserUrlInput::placeholder{color:rgba(255,255,255,.22)}
+.browserUrlInput:focus{border-color:rgba(0,200,255,.5);background:rgba(0,200,255,.04);box-shadow:0 0 0 3px rgba(0,200,255,.1)}
+.browserGoBtn{position:absolute;right:5px;top:50%;transform:translateY(-50%);width:26px;height:26px;border-radius:50%;background:linear-gradient(135deg,rgba(0,200,255,.25),rgba(180,0,255,.25));border:1px solid rgba(0,200,255,.3);display:flex;align-items:center;justify-content:center;cursor:pointer;font-size:13px;transition:all .15s}
+.browserGoBtn:hover{background:linear-gradient(135deg,rgba(0,200,255,.45),rgba(180,0,255,.45));box-shadow:0 0 10px rgba(0,200,255,.3)}
+.browserSecBadge{padding:4px 9px;border-radius:6px;background:rgba(0,220,100,.07);border:1px solid rgba(0,220,100,.16);font-size:9px;letter-spacing:1.5px;color:rgba(0,220,100,.55);text-transform:uppercase;flex-shrink:0;white-space:nowrap}
+.browserBody{flex:1;overflow-y:auto;display:flex;flex-direction:column}
+
+/* BROWSER HOME */
+.browserHomePage{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:14px;padding:40px;flex:1}
+.browserHomeLogo{font-size:52px;text-shadow:0 0 30px rgba(0,200,255,.4),0 0 60px rgba(180,0,255,.25)}
+.browserHomeTitle{font-size:13px;letter-spacing:8px;color:rgba(255,255,255,.2);text-transform:uppercase;font-weight:300}
+
+/* BROWSER SEARCH RESULTS — full width */
+.browserResultsPage{padding:32px 40px;display:flex;flex-direction:column;gap:0;width:100%}
+.browserResultsMeta{font-size:11px;color:rgba(255,255,255,.22);letter-spacing:1px;margin-bottom:20px}
+.browserResultItem{padding:18px 0;border-bottom:1px solid rgba(255,255,255,.05);display:flex;flex-direction:column;gap:4px;animation:resultIn .25s ease both;width:100%}
+.browserResultItem:last-child{border-bottom:none}
+.browserResultTopRow{display:flex;align-items:baseline;justify-content:space-between;gap:12px;width:100%}
+.browserResultName{font-size:15px;font-weight:500;color:#4db8ff;text-decoration:underline;text-underline-offset:3px;cursor:pointer;letter-spacing:.2px;transition:color .15s}
+.browserResultName:hover{color:#80cfff}
+.browserResultYear{font-size:15px;color:#4db8ff;font-weight:400;letter-spacing:.5px;white-space:nowrap;flex-shrink:0}
+.browserResultUrl{font-size:11px;color:rgba(0,220,100,.5);letter-spacing:.5px;margin-bottom:2px}
+.browserResultDesc{font-size:12px;color:rgba(255,255,255,.38);line-height:1.6;letter-spacing:.2px}
+.browserNoResults{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:18px;padding:60px 40px;flex:1;animation:noResultsPop .35s cubic-bezier(.34,1.56,.64,1)}
+.browserNoResultsGlyph{width:72px;height:72px;border-radius:50%;background:rgba(0,200,255,.06);border:1.5px solid rgba(0,200,255,.14);display:flex;align-items:center;justify-content:center;font-size:32px;animation:shieldPulse 3s ease-in-out infinite}
+.browserNoResultsTitle{font-size:19px;font-weight:600;color:rgba(255,255,255,.8);text-align:center;letter-spacing:.5px}
+.browserNoResultsSub{font-size:13px;color:rgba(255,255,255,.32);text-align:center;line-height:1.7;max-width:340px;letter-spacing:.2px}
+.browserNoResultsQuery{font-size:12px;color:rgba(0,200,255,.5);letter-spacing:1px;padding:7px 16px;border-radius:8px;background:rgba(0,200,255,.06);border:1px solid rgba(0,200,255,.12);font-style:italic;max-width:320px;text-align:center;word-break:break-all}
+
+/* BROWSER INFO PAGE */
+.browserInfoPage{width:100%;overflow-y:auto;display:flex;flex-direction:column;align-items:center;padding:48px 24px;flex:1}
+.browserInfoInner{max-width:660px;width:100%;display:flex;flex-direction:column;gap:0}
+.browserInfoHeader{display:flex;align-items:center;gap:20px;padding-bottom:28px;border-bottom:1px solid rgba(255,255,255,.07);margin-bottom:32px}
+.browserInfoLogo{font-size:44px;filter:drop-shadow(0 0 20px rgba(0,200,255,.4))}
+.browserInfoSiteTitle{font-size:22px;font-weight:600;letter-spacing:1px;color:#fff}
+.browserInfoSiteSub{font-size:11px;letter-spacing:3px;color:rgba(0,200,255,.55);text-transform:uppercase;margin-top:4px}
+.browserInfoSection{margin-bottom:28px}
+.browserInfoSectionTitle{font-size:10px;letter-spacing:4px;color:rgba(255,255,255,.25);text-transform:uppercase;margin-bottom:12px}
+.browserInfoBody{font-size:14px;color:rgba(255,255,255,.7);line-height:1.8;letter-spacing:.2px}
+.browserInfoMailRow{display:flex;flex-direction:column;gap:8px;margin-top:14px}
+.browserInfoMail{padding:11px 16px;border-radius:10px;background:rgba(0,200,255,.05);border:1px solid rgba(0,200,255,.14);font-size:13px;color:#00c8ff;letter-spacing:.5px;display:flex;align-items:center;gap:10px}
+.browserInfoMail span{font-size:16px}
+.browserInfoFooter{font-size:11px;color:rgba(255,255,255,.18);text-align:center;margin-top:32px;letter-spacing:1px}
+
+/* SETTINGS */
+.settingsContent{padding:40px;display:flex;flex-direction:column;gap:12px}
+.settingsTitle{font-size:11px;letter-spacing:4px;color:rgba(255,255,255,.3);text-transform:uppercase;margin-bottom:16px;margin-top:8px}
+.settingRow{display:flex;align-items:center;justify-content:space-between;padding:20px 24px;border-radius:16px;background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.07);transition:background .2s}
+.settingRow:hover{background:rgba(255,255,255,.07)}
+.settingRow.locked{opacity:.5;cursor:not-allowed}
+.settingRow.locked:hover{background:rgba(255,255,255,.04)}
+.settingLabel{font-size:15px;color:rgba(255,255,255,.85);letter-spacing:.5px}
+.settingDesc{font-size:11px;color:rgba(255,255,255,.3);margin-top:4px;letter-spacing:.3px}
+.settingLockHint{display:none;font-size:11px;color:rgba(255,120,60,.7);margin-top:6px;letter-spacing:.3px}
+.settingRow.locked .settingLockHint{display:block}
+.wallpaperGrid{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-top:6px;width:100%}
+.wpOption{height:56px;border-radius:10px;cursor:pointer;border:2px solid transparent;transition:border-color .15s,transform .15s;position:relative}
+.wpOption:hover{transform:scale(1.04)}
+.wpOption.active{border-color:rgba(0,200,255,.8);box-shadow:0 0 12px rgba(0,200,255,.4)}
+.wpOption.active::after{content:'✓';position:absolute;bottom:4px;right:6px;font-size:10px;color:#fff;text-shadow:0 0 6px #000}
+.notifSection{display:flex;flex-direction:column;gap:8px;margin-top:4px}
+.notifRow{display:flex;align-items:center;justify-content:space-between;padding:14px 20px;border-radius:12px;background:rgba(255,255,255,.03);border:1px solid rgba(255,255,255,.06)}
+.notifAppName{font-size:14px;color:rgba(255,255,255,.8);letter-spacing:.3px;display:flex;align-items:center;gap:8px}
+
+/* PW CHANGE BOX */
+.pwChangeBox{display:flex;flex-direction:column;gap:10px;padding:20px;border-radius:14px;background:rgba(255,255,255,.03);border:1px solid rgba(255,255,255,.07);margin-top:6px}
+.pwChangeBox label{font-size:11px;letter-spacing:2px;color:rgba(255,255,255,.3);text-transform:uppercase;margin-bottom:2px;display:block}
+.pwChangeField{position:relative;display:flex;flex-direction:column;gap:4px}
+.pwChangeBtn{padding:12px 20px;border-radius:10px;background:linear-gradient(135deg,rgba(0,200,255,.2),rgba(180,0,255,.2));border:1px solid rgba(0,200,255,.25);color:#fff;font-size:13px;letter-spacing:1px;cursor:pointer;transition:background .2s,box-shadow .2s;margin-top:4px;font-family:inherit}
+.pwChangeBtn:hover{background:linear-gradient(135deg,rgba(0,200,255,.35),rgba(180,0,255,.35));box-shadow:0 0 16px rgba(0,200,255,.2)}
+.pwChangeMsg{font-size:12px;letter-spacing:.5px;min-height:18px;margin-top:4px;font-weight:500}
+.pwChangeMsg.ok{color:rgba(0,220,100,.9)}
+.pwChangeMsg.err{color:#ff4444;animation:shake .3s ease}
+
+/* TOGGLE */
+.toggle{position:relative;width:52px;height:28px;flex-shrink:0}
+.toggle input{opacity:0;width:0;height:0}
+.toggleSlider{position:absolute;inset:0;border-radius:28px;background:rgba(255,255,255,.12);border:1px solid rgba(255,255,255,.1);cursor:pointer;transition:background .25s,box-shadow .25s}
+.toggleSlider::before{content:'';position:absolute;width:20px;height:20px;left:3px;top:3px;border-radius:50%;background:#fff;transition:transform .25s,box-shadow .25s;box-shadow:0 2px 6px rgba(0,0,0,.4)}
+.toggle input:checked + .toggleSlider{background:linear-gradient(135deg,rgba(0,200,255,.8),rgba(180,0,255,.8));border-color:rgba(0,200,255,.4);box-shadow:0 0 16px rgba(0,200,255,.3)}
+.toggle input:checked + .toggleSlider::before{transform:translateX(24px)}
+.toggle.disabled .toggleSlider{cursor:not-allowed;opacity:.4}
+
+/* ADMIN */
+.adminContent{padding:40px;display:flex;flex-direction:column;gap:12px}
+.adminTitle{font-size:11px;letter-spacing:4px;color:rgba(255,255,255,.3);text-transform:uppercase;margin-bottom:16px}
+.adminSettingRow{display:flex;align-items:center;justify-content:space-between;padding:20px 24px;border-radius:16px;background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.07);transition:background .2s}
+.adminSettingRow:hover{background:rgba(255,255,255,.07)}
+.bonusTimeBtn{padding:12px 20px;border-radius:10px;background:rgba(0,200,100,.12);border:1px solid rgba(0,200,100,.25);color:rgba(0,255,130,.9);font-size:14px;letter-spacing:1px;cursor:pointer;transition:background .2s;text-align:center}
+.bonusTimeBtn:hover{background:rgba(0,200,100,.25)}
+.bonusDenyBtn{padding:12px 20px;border-radius:10px;background:rgba(255,60,60,.1);border:1px solid rgba(255,60,60,.2);color:rgba(255,100,100,.9);font-size:14px;letter-spacing:1px;cursor:pointer;transition:background .2s;text-align:center}
+.bonusDenyBtn:hover{background:rgba(255,60,60,.2)}
+
+/* NOTIF BADGE */
+.notifBadge{position:absolute;top:6px;right:6px;width:8px;height:8px;border-radius:50%;background:#ff6600;box-shadow:0 0 6px rgba(255,102,0,.8);animation:badgePulse 1.5s infinite}
+
+/* GAME TIMER */
+#gameTimerBar{align-items:center;gap:10px;margin-top:-16px}
+#gameTimerLabel{font-size:11px;letter-spacing:2px;color:rgba(255,165,0,.7)}
+#gameTimerTrack{width:140px;height:4px;border-radius:2px;background:rgba(255,255,255,.08)}
+#gameTimerFill{height:100%;border-radius:2px;background:linear-gradient(90deg,#00c8ff,#b400ff);transition:width 1s linear}
+
+/* CHEAT NOTICE */
+#cheatNotice{position:absolute;top:24px;left:50%;transform:translateX(-50%);background:rgba(0,220,80,.12);border:1px solid rgba(0,220,80,.4);border-radius:10px;padding:8px 20px;font-size:12px;letter-spacing:2px;color:rgba(0,255,100,.9);pointer-events:none;opacity:0;transition:opacity .3s;white-space:nowrap;z-index:20}
+#cheatNotice.show{opacity:1}
+
+/* GAME LAYOUT — default dark mode */
+#gameWrapper{display:flex;height:100%;overflow:hidden;background:transparent;transition:background .4s}
+#gameArea{display:flex;flex-direction:column;align-items:center;justify-content:center;flex:1;gap:28px;user-select:none;position:relative;transition:background .4s}
+#scoreLabel{font-size:11px;letter-spacing:4px;color:rgba(255,255,255,.35);text-transform:uppercase;transition:color .4s}
+#scoreNum{font-size:72px;font-weight:700;line-height:1;background:linear-gradient(135deg,#00c8ff,#b400ff);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;filter:drop-shadow(0 0 20px rgba(0,200,255,.4));transition:transform .1s}
+#scoreNum.pop{transform:scale(1.15)}
+#ptsPerClick{font-size:12px;color:rgba(255,255,255,.3);letter-spacing:2px;transition:color .4s}
+#clickTarget{cursor:pointer;transition:transform .08s,filter .15s;display:flex;align-items:center;justify-content:center}
+#clickTarget:active{transform:scale(.92)!important}
+#levelBadge{font-size:11px;letter-spacing:3px;color:rgba(255,255,255,.25);text-transform:uppercase;margin-top:-12px;transition:color .4s}
+
+/* SHADER LIGHT MODE — applied to #gameWrapper when shaderOn */
+#gameWrapper.shaderOn{background:linear-gradient(160deg,#e8f4ff 0%,#c8e4ff 50%,#d4ecff 100%)}
+#gameWrapper.shaderOn #gameArea{background:transparent}
+#gameWrapper.shaderOn #scoreLabel{color:rgba(20,60,120,.55)}
+#gameWrapper.shaderOn #ptsPerClick{color:rgba(20,60,120,.45)}
+#gameWrapper.shaderOn #levelBadge{color:rgba(20,60,120,.35)}
+#gameWrapper.shaderOn #scoreNum{background:linear-gradient(135deg,#1a5cb8,#0080cc);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;filter:drop-shadow(0 0 10px rgba(50,120,200,.3))}
+#gameWrapper.shaderOn #gameTimerLabel{color:rgba(30,80,160,.7)}
+#gameWrapper.shaderOn #cheatNotice{background:rgba(20,120,60,.1);border-color:rgba(20,180,80,.3);color:rgba(10,100,50,.9)}
+/* Shader: shop & achievement panels in light mode */
+#gameWrapper.shaderOn #shopPanel{background:rgba(220,237,255,.92);border-right-color:rgba(100,160,255,.2)}
+#gameWrapper.shaderOn .shopHeader{color:rgba(20,60,120,.5)}
+#gameWrapper.shaderOn .shopItem{background:rgba(200,225,255,.6);border-color:rgba(100,160,255,.2);color:#1a3a6e}
+#gameWrapper.shaderOn .shopItem:hover:not(.bought){background:rgba(180,215,255,.8);border-color:rgba(60,140,255,.5)}
+#gameWrapper.shaderOn .shopItemName{color:#1a3060}
+#gameWrapper.shaderOn .shopItemDesc{color:rgba(20,60,120,.55)}
+#gameWrapper.shaderOn .shopItemPrice{color:#1a6bbf}
+#gameWrapper.shaderOn .shopItemBought{color:rgba(0,140,80,.8)}
+#gameWrapper.shaderOn #achievementPanel{background:rgba(220,237,255,.92);border-left-color:rgba(100,160,255,.2)}
+#gameWrapper.shaderOn .achHeader{color:rgba(20,60,120,.5)}
+#gameWrapper.shaderOn .achItem{background:rgba(200,225,255,.6);border-color:rgba(100,160,255,.2)}
+#gameWrapper.shaderOn .achItem.unlocked{border-color:rgba(60,140,255,.5);box-shadow:0 0 20px rgba(80,160,255,.15)}
+#gameWrapper.shaderOn .achName{color:#1a3060}
+#gameWrapper.shaderOn .achSub{color:rgba(20,60,120,.45)}
+#gameWrapper.shaderOn .achLock{color:rgba(20,60,120,.3)}
+/* Shader game timer track */
+#gameWrapper.shaderOn #gameTimerTrack{background:rgba(100,160,255,.2)}
+#gameWrapper.shaderOn #gameTimerFill{background:linear-gradient(90deg,#1a80d0,#4060c0)}
+
+/* Eltern-Überwachung timeline in shader mode */
+#gameWrapper.shaderOn #gameLockOverlay{background:rgba(200,225,255,.92)}
+#gameWrapper.shaderOn .gameLockTitle{color:rgba(20,60,120,.9)}
+#gameWrapper.shaderOn .gameLockText{color:rgba(20,60,120,.5)}
+#gameWrapper.shaderOn .requestSentTitle{color:rgba(0,120,60,.9)}
+#gameWrapper.shaderOn .gameLockBtn{background:rgba(60,130,255,.15);border-color:rgba(60,130,255,.35);color:#1a5cb8}
+
+/* ACHIEVEMENTS — dark default */
+#achievementPanel{width:0;overflow:hidden;transition:width .5s cubic-bezier(.4,0,.2,1);background:rgba(8,8,8,.98);border-left:1px solid rgba(255,255,255,.06);display:flex;flex-direction:column}
+#achievementPanel.visible{width:22%}
+.achHeader{padding:20px 20px 12px;font-size:10px;letter-spacing:4px;color:rgba(255,255,255,.3);text-transform:uppercase;border-bottom:1px solid rgba(255,255,255,.06)}
+.achList{padding:16px;display:flex;flex-direction:column;gap:10px;overflow-y:auto}
+.achItem{padding:16px;border-radius:14px;background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.07);opacity:.35;transition:opacity .4s,border-color .4s,box-shadow .4s}
+.achItem.unlocked{opacity:1;border-color:rgba(0,200,255,.3);box-shadow:0 0 20px rgba(0,200,255,.1)}
+.achIcon{font-size:26px;margin-bottom:6px}
+.achName{font-size:13px;font-weight:600;letter-spacing:1px;color:#fff}
+.achSub{font-size:10px;color:rgba(255,255,255,.3);margin-top:2px;letter-spacing:.5px}
+.achLock{font-size:10px;color:rgba(255,255,255,.2);margin-top:6px;letter-spacing:.5px}
+#scoreDisplay{display:flex;flex-direction:column;align-items:center;gap:6px}
+
+/* SHOP — dark default */
+#shopPanel{width:0;overflow:hidden;transition:width .5s cubic-bezier(.4,0,.2,1);background:rgba(6,6,6,.98);border-right:1px solid rgba(255,255,255,.06);display:flex;flex-direction:column;order:-1}
+#shopPanel.visible{width:20%}
+.shopHeader{padding:18px 16px 12px;font-size:10px;letter-spacing:4px;color:rgba(255,255,255,.3);text-transform:uppercase;border-bottom:1px solid rgba(255,255,255,.06)}
+.shopList{padding:12px;display:flex;flex-direction:column;gap:8px;overflow-y:auto}
+.shopItem{padding:14px 12px;border-radius:12px;background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.07);cursor:pointer;transition:background .15s,border-color .2s;position:relative}
+.shopItem:hover:not(.bought){background:rgba(255,255,255,.08);border-color:rgba(0,200,255,.3)}
+.shopItem.bought{opacity:.45;cursor:default;border-color:rgba(0,200,255,.2)}
+.shopItemIcon{font-size:18px;margin-bottom:4px}
+.shopItemName{font-size:12px;font-weight:600;color:#fff;letter-spacing:.5px}
+.shopItemDesc{font-size:10px;color:rgba(255,255,255,.35);margin-top:2px;letter-spacing:.3px;line-height:1.4}
+.shopItemPrice{font-size:11px;color:#00c8ff;margin-top:6px;letter-spacing:1px;font-weight:600}
+.shopItemBought{font-size:10px;color:rgba(0,200,100,.7);margin-top:4px;letter-spacing:.5px}
+.shopItemCantAfford{border-color:rgba(255,60,60,.2)!important}
+
+/* AUTOCLICKER SHAPES */
+#autoClickerField{position:absolute;inset:0;pointer-events:none;overflow:hidden}
+.autoClickShape{position:absolute;animation:floatShape 3s ease-in-out infinite alternate;opacity:.6}
+
+/* GAME LOCK OVERLAY */
+#gameLockOverlay{position:absolute;inset:0;background:rgba(0,0,0,.88);display:none;flex-direction:column;align-items:center;justify-content:center;gap:18px;backdrop-filter:blur(12px);z-index:10;transition:background .4s}
+#gameLockOverlay.show{display:flex}
+.gameLockIcon{font-size:52px}
+.gameLockTitle{font-size:18px;font-weight:400;letter-spacing:3px;color:rgba(255,255,255,.9);text-align:center}
+.gameLockText{font-size:13px;color:rgba(255,255,255,.4);letter-spacing:.5px;text-align:center;line-height:1.7}
+#requestSentState{display:none;flex-direction:column;align-items:center;gap:10px}
+.requestSentCheck{font-size:52px;animation:popIn .4s cubic-bezier(.34,1.56,.64,1)}
+.requestSentTitle{font-size:16px;font-weight:400;letter-spacing:3px;color:rgba(80,220,120,.9)}
+.requestSentSub{font-size:12px;color:rgba(255,255,255,.3);letter-spacing:1px;animation:subtlePulse 2s ease-in-out infinite}
+.gameLockBtn{padding:12px 32px;border-radius:10px;background:rgba(0,200,255,.15);border:1px solid rgba(0,200,255,.3);color:#00c8ff;font-size:14px;letter-spacing:1px;cursor:pointer;transition:background .2s,box-shadow .2s}
+.gameLockBtn:hover{background:rgba(0,200,255,.25);box-shadow:0 0 16px rgba(0,200,255,.3)}
+
+/* BONUS TIME OVERLAY */
+#bonusTimeOverlay{position:fixed;inset:0;background:rgba(0,0,0,.8);z-index:20000;display:none;align-items:center;justify-content:center;backdrop-filter:blur(10px)}
+#bonusTimeOverlay.show{display:flex;animation:fadeIn .2s ease}
+.bonusBox{background:rgba(18,18,18,.98);border:1px solid rgba(255,165,0,.2);border-radius:20px;padding:40px 48px;display:flex;flex-direction:column;align-items:center;gap:16px;max-width:360px;width:90%;animation:popIn .22s cubic-bezier(.34,1.56,.64,1)}
+.bonusIcon{font-size:40px}
+.bonusTitle{font-size:18px;font-weight:400;letter-spacing:3px;color:rgba(255,255,255,.9);text-align:center}
+.bonusText{font-size:13px;color:rgba(255,255,255,.4);text-align:center;line-height:1.7}
+.bonusBtns{display:flex;flex-direction:column;gap:8px;width:100%;margin-top:4px}
+.bonusClose{padding:8px;font-size:12px;color:rgba(255,255,255,.3);cursor:pointer;letter-spacing:1px;text-align:center}
+.bonusClose:hover{color:rgba(255,255,255,.6)}
+
+/* MESSAGES */
+#msgApp{display:flex;height:100%}
+#msgSidebar{width:280px;border-right:1px solid rgba(255,255,255,.07);display:flex;flex-direction:column;background:rgba(10,10,10,.9);flex-shrink:0}
+#msgSidebarHeader{padding:20px 18px 14px;font-size:11px;letter-spacing:4px;color:rgba(255,255,255,.3);text-transform:uppercase;border-bottom:1px solid rgba(255,255,255,.06)}
+#msgChatList{display:flex;flex-direction:column}
+.msgChatItem{padding:16px 18px;display:flex;align-items:center;gap:12px;cursor:pointer;transition:background .15s;border-bottom:1px solid rgba(255,255,255,.04)}
+.msgChatItem:hover{background:rgba(255,255,255,.05)}
+.msgChatItem.active{background:rgba(0,200,255,.06);border-left:2px solid rgba(0,200,255,.6)}
+.msgChatAvatar{width:40px;height:40px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:18px;flex-shrink:0}
+.msgChatInfo{flex:1;min-width:0}
+.msgChatName{font-size:14px;color:rgba(255,255,255,.88);font-weight:500;letter-spacing:.3px}
+.msgChatPreview{font-size:11px;color:rgba(255,255,255,.3);margin-top:2px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;letter-spacing:.2px}
+.msgChatTime{font-size:10px;color:rgba(255,255,255,.25);flex-shrink:0}
+#msgMain{flex:1;display:flex;flex-direction:column;background:rgba(8,8,8,.95);min-width:0}
+#msgChatHeader{padding:14px 20px;border-bottom:1px solid rgba(255,255,255,.06);display:flex;align-items:center;gap:12px;flex-shrink:0}
+#msgChatHeaderAvatar{width:36px;height:36px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:16px;flex-shrink:0}
+#msgChatHeaderName{font-size:14px;font-weight:500;color:rgba(255,255,255,.88);letter-spacing:.3px}
+#msgChatHeaderSub{font-size:11px;color:rgba(255,255,255,.3);margin-top:1px}
+#msgBody{flex:1;padding:20px;overflow-y:auto;display:flex;flex-direction:column;gap:4px}
+#msgInputRow{padding:12px 20px;border-top:1px solid rgba(255,255,255,.06);display:flex;gap:10px;align-items:center;flex-shrink:0}
+#msgInput{flex:1;background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.1);border-radius:10px;padding:10px 14px;color:#fff;font-size:13px;outline:none;letter-spacing:.3px}
+#msgInput:focus{border-color:rgba(0,200,255,.4)}
+#msgSendBtn{width:36px;height:36px;border-radius:8px;background:rgba(0,200,255,.15);border:1px solid rgba(0,200,255,.3);color:#00c8ff;font-size:16px;cursor:pointer;display:flex;align-items:center;justify-content:center;transition:background .15s;flex-shrink:0}
+#msgSendBtn:hover{background:rgba(0,200,255,.28)}
+.encryptNotice{background:rgba(255,165,0,.07);border:1px solid rgba(255,165,0,.15);border-radius:10px;padding:10px 16px;text-align:center;font-size:11px;color:rgba(255,200,100,.6);line-height:1.6;margin:8px auto;max-width:320px;letter-spacing:.3px}
+.encryptNotice span{font-size:14px;display:block;margin-bottom:4px}
+.msgBubble{max-width:70%;padding:10px 14px;border-radius:14px;font-size:13px;line-height:1.55;letter-spacing:.2px;position:relative;animation:slideInChat .2s ease}
+.msgBubble.system{background:rgba(0,200,255,.1);border:1px solid rgba(0,200,255,.15);color:rgba(255,255,255,.85);align-self:flex-start;border-radius:4px 14px 14px 14px}
+.msgBubble.ai{background:rgba(180,0,255,.1);border:1px solid rgba(180,0,255,.2);color:rgba(255,255,255,.85);align-self:flex-start;border-radius:4px 14px 14px 14px}
+.msgBubble.user{background:rgba(0,200,255,.15);border:1px solid rgba(0,200,255,.2);color:rgba(255,255,255,.9);align-self:flex-end;border-radius:14px 4px 14px 14px}
+.msgTime{font-size:10px;color:rgba(255,255,255,.25);margin-top:4px;text-align:right}
+.msgDateDivider{text-align:center;font-size:10px;color:rgba(255,255,255,.2);letter-spacing:2px;margin:12px 0;text-transform:uppercase}
+.aiFaqWidget{align-self:flex-start;background:rgba(180,0,255,.08);border:1px solid rgba(180,0,255,.25);border-radius:4px 14px 14px 14px;padding:14px 16px;max-width:80%;animation:slideInChat .2s ease;margin-bottom:4px}
+.aiFaqTitle{font-size:11px;letter-spacing:2px;color:rgba(255,255,255,.4);text-transform:uppercase;margin-bottom:12px}
+.aiFaqOption{display:flex;align-items:center;gap:10px;padding:10px 12px;border-radius:8px;cursor:pointer;transition:background .15s;margin-bottom:6px;border:1px solid rgba(255,255,255,.07);background:rgba(255,255,255,.04)}
+.aiFaqOption:hover{background:rgba(255,255,255,.1);border-color:rgba(0,200,255,.3)}
+.aiFaqOption input[type=radio]{accent-color:#00c8ff;width:14px;height:14px;flex-shrink:0;cursor:pointer}
+.aiFaqOption label{font-size:13px;color:rgba(255,255,255,.8);cursor:pointer;line-height:1.4}
+.aiFaqSend{margin-top:10px;padding:9px 20px;border-radius:8px;background:rgba(0,200,255,.15);border:1px solid rgba(0,200,255,.3);color:#00c8ff;font-size:12px;letter-spacing:1px;cursor:pointer;transition:background .15s;width:100%;font-family:inherit}
+.aiFaqSend:hover{background:rgba(0,200,255,.25)}
+
+/* ══════════════════════════════════════════
+   KLICK-GAME SHADER — Toggle App (Store + App)
+   ══════════════════════════════════════════ */
+.shaderAppWindow{display:flex;flex-direction:column;align-items:center;justify-content:center;height:100%;gap:28px;padding:40px;background:transparent}
+.shaderTitle{font-size:22px;font-weight:700;letter-spacing:2px;color:#fff}
+.shaderDesc{font-size:13px;color:rgba(255,255,255,.4);letter-spacing:.5px;text-align:center;max-width:280px;line-height:1.7}
+.shaderToggleRow{display:flex;align-items:center;gap:18px;padding:20px 28px;border-radius:16px;background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.08);width:100%;max-width:320px;justify-content:space-between}
+.shaderToggleLabel{display:flex;flex-direction:column;gap:4px}
+.shaderToggleLabelTitle{font-size:15px;color:#fff;letter-spacing:.3px;font-weight:500}
+.shaderToggleLabelSub{font-size:11px;color:rgba(255,255,255,.3);letter-spacing:.3px}
+.shaderStatusBadge{font-size:11px;letter-spacing:2px;text-transform:uppercase;padding:5px 12px;border-radius:8px;font-weight:600;transition:all .3s}
+.shaderStatusBadge.off{background:rgba(255,255,255,.06);color:rgba(255,255,255,.3);border:1px solid rgba(255,255,255,.08)}
+.shaderStatusBadge.on{background:rgba(80,160,255,.12);color:rgba(120,190,255,.9);border:1px solid rgba(80,160,255,.25)}
+.shaderToggleBig{position:relative;width:64px;height:34px;flex-shrink:0}
+.shaderToggleBig input{opacity:0;width:0;height:0}
+.shaderSlider{position:absolute;inset:0;border-radius:34px;background:rgba(255,255,255,.12);border:1px solid rgba(255,255,255,.12);cursor:pointer;transition:all .3s}
+.shaderSlider::before{content:'';position:absolute;width:26px;height:26px;left:3px;top:3px;border-radius:50%;background:#fff;transition:transform .3s,box-shadow .3s;box-shadow:0 2px 6px rgba(0,0,0,.4)}
+.shaderToggleBig input:checked + .shaderSlider{background:linear-gradient(135deg,#4da8ff,#1a6dcc);border-color:rgba(80,160,255,.4);box-shadow:0 0 16px rgba(80,160,255,.3),animation:lightGlow 2s ease-in-out infinite}
+.shaderToggleBig input:checked + .shaderSlider::before{transform:translateX(30px)}
+.shaderInfoBox{padding:14px 20px;border-radius:12px;background:rgba(255,255,255,.03);border:1px solid rgba(255,255,255,.06);font-size:12px;color:rgba(255,255,255,.3);letter-spacing:.3px;text-align:center;line-height:1.6;max-width:320px}
+/* Eltern-Überwachung Zeitleiste angepasst (shader) */
+#gameWrapper.shaderOn .gameLockOverlay{background:rgba(200,225,255,.9)}
+
+#konfetti{position:fixed;inset:0;pointer-events:none;z-index:99999}
+</style>
+</head>
+<body>
+<canvas id="konfetti"></canvas>
+<div id="resetBar"><div id="resetBarInner"></div></div>
+
+<!-- DOWNLOAD MODAL -->
+<div id="dlModal">
+  <div class="dlBox">
+    <div class="dlAppIcon" id="dlAppIcon">🛡️</div>
+    <div class="dlAppName" id="dlAppName">App</div>
+    <div class="dlAppSub" id="dlAppSub">JOS · v1.0</div>
+    <div class="dlStatusText" id="dlStatusText">Lädt herunter...</div>
+    <div class="dlTrack"><div class="dlBar" id="dlBar"></div></div>
+    <div class="dlDoneText" id="dlDoneText">✓ Erfolgreich installiert</div>
+  </div>
+</div>
+
+<div class="menuBtn" id="globalMenuBtn" onclick="toggleSysMenu()">
+  <span></span><span></span><span></span>
+</div>
+<div class="sysMenu" id="sysMenu">
+  <div class="menuLabel">System</div>
+  <div class="menuItem" onclick="sysMenuAction('restart')">↺&nbsp;&nbsp;Neu starten</div>
+  <div class="menuDivider"></div>
+  <div class="menuItem danger" onclick="sysMenuAction('reset')">⊗&nbsp;&nbsp;Zurücksetzen</div>
+</div>
+
+<div id="confirmOverlay" onclick="closeConfirmOutside(event)">
+  <div class="confirmBox">
+    <div class="confirmIcon" id="confirmIcon"></div>
+    <div class="confirmTitle" id="confirmTitle"></div>
+    <div class="confirmText" id="confirmText"></div>
+    <div class="confirmBtns">
+      <div class="confirmBtnCancel" onclick="closeConfirm()">Abbrechen</div>
+      <div class="confirmBtnOk" id="confirmOkBtn" onclick="doConfirmAction()"></div>
+    </div>
+  </div>
+</div>
+
+<!-- BONUS TIME -->
+<div id="bonusTimeOverlay">
+  <div class="bonusBox">
+    <div class="bonusIcon">👨‍👧</div>
+    <div class="bonusTitle">ANFRAGE FÜR MEHR ZEIT</div>
+    <div class="bonusText">Dein Kind bittet um mehr Spielzeit.<br>Was möchtest du erlauben?</div>
+    <div class="bonusBtns">
+      <div style="font-size:10px;letter-spacing:3px;color:rgba(255,255,255,.2);text-align:center;margin-bottom:2px">BONUSZEIT ERLAUBEN</div>
+      <div class="bonusTimeBtn" onclick="grantBonus(5)">+ 5 Minuten</div>
+      <div class="bonusTimeBtn" onclick="grantBonus(15)">+ 15 Minuten</div>
+      <div class="bonusTimeBtn" onclick="grantBonus(30)">+ 30 Minuten</div>
+      <div class="bonusTimeBtn" onclick="grantBonus(60)">+ 1 Stunde</div>
+      <div class="bonusDenyBtn" onclick="denyBonus()">Nicht zulassen</div>
+    </div>
+    <div class="bonusClose" onclick="closeBonusOverlay()">Schließen</div>
+  </div>
+</div>
+
+<!-- BOOT -->
+<div id="boot"><div class="logo">△</div><h1>JulianOS</h1></div>
+
+<!-- LOGIN -->
+<div id="login" class="hidden">
+  <div class="loginBox">
+    <div class="avatar">👤</div>
+    <div class="username">Julian</div>
+    <button class="loginBtn" onclick="handleLogin()">Anmelden</button>
+    <div class="loginHint">JULIANUS · v6</div>
+  </div>
+</div>
+
+<!-- PW OVERLAY (System-Login) — mit X und - Buttons -->
+<div id="pwOverlay" class="hidden">
+  <div class="pwOverlayBox">
+    <div class="pwOverlayWinBtns">
+      <div class="pwOverlayWinBtn" onclick="minimizePwOverlay()" title="Minimieren">—</div>
+      <div class="pwOverlayWinBtn close" onclick="closePwOverlay()" title="Schließen">✕</div>
+    </div>
+    <div class="lockIcon">🔐</div>
+    <h2>SYSTEMZUGANG</h2>
+    <input id="overlayPw" type="password" placeholder="Passwort eingeben" style="width:260px" onkeydown="if(event.key==='Enter')checkOverlayPw()">
+    <button class="loginBtn" onclick="checkOverlayPw()">Entsperren</button>
+    <div id="overlayError"></div>
+  </div>
+</div>
+
+<!-- DESKTOP -->
+<div id="desktop">
+  <div id="desktopBg"></div>
+  <div class="desktopIcons" id="desktopIconsRow">
+    <div class="desktopIcon" onclick="openWindow('notes')">📝<span>Notizen</span></div>
+    <div class="desktopIcon" onclick="openWindow('game')">🎮<span>Klick-Game</span></div>
+    <div class="desktopIcon" onclick="openWindow('store')">🏪<span>Store</span></div>
+    <div class="desktopIcon" onclick="openWindow('settings')">⚙️<span>Einst.</span></div>
+    <div class="desktopIcon" onclick="openWindow('messages')">💬<span>Nachrichten</span></div>
+  </div>
+
+  <!-- TASKBAR -->
+  <div class="taskbar">
+    <div id="task-notes"    class="taskIcon" onclick="toggleWindow('notes')"    title="Notizen">📝</div>
+    <div id="task-game"     class="taskIcon" onclick="toggleWindow('game')"     title="Klick-Game">🎮</div>
+    <div id="task-store"    class="taskIcon" onclick="toggleWindow('store')"    title="Store">🏪</div>
+    <div id="task-settings" class="taskIcon" onclick="toggleWindow('settings')" title="Einstellungen">⚙️</div>
+    <div id="task-messages" class="taskIcon" onclick="toggleWindow('messages')" title="Nachrichten">💬</div>
+    <div id="task-virus"    class="taskIcon hidden" onclick="toggleWindow('virus')"    title="Virenschutz JOS">🛡️</div>
+    <div id="task-browser"  class="taskIcon hidden" onclick="toggleWindow('browser')"  title="JOS-B1">🌐</div>
+    <div id="task-shader"   class="taskIcon hidden" onclick="toggleWindow('shader')"   title="Klick-Game Shader: Light">🌤️</div>
+    <div id="task-adminOptions" class="taskIcon hidden" onclick="toggleWindow('adminOptions')" style="position:relative" title="Admin">🔒</div>
+    <div class="clock" id="clock"></div>
+  </div>
+
+  <!-- NOTIZEN -->
+  <div class="window" id="notes">
+    <div class="titlebar">
+      <span class="title">📝 Notizen</span>
+      <div class="winBtns">
+        <div class="winBtn" onclick="minimizeWindow('notes')">—</div>
+        <div class="winBtn close" onclick="closeNotes()">✕</div>
+      </div>
+    </div>
+    <div class="notesMenuBar" id="notesMenuBar">
+      <div class="notesMenuBtn" id="notesFileBtn" onclick="toggleNotesMenu(event)">Datei</div>
+      <div class="notesDropdown" id="notesDropdown">
+        <div class="notesDropItem" onclick="notesSave()"><span>💾 Speichern</span><span class="shortcut">Strg+S</span></div>
+        <div class="notesDropDivider"></div>
+        <div class="notesDropItem" onclick="notesNew()"><span>📄 Neue Notiz</span><span class="shortcut">Strg+N</span></div>
+      </div>
+      <div class="notesUnsavedDot" id="notesUnsavedDot"></div>
+      <span id="notesFileLabel" style="font-size:11px;color:rgba(255,255,255,.25);letter-spacing:.5px;margin-left:4px"></span>
+    </div>
+    <div class="notesContentWrap">
+      <textarea class="notesTextarea" id="notesArea" placeholder="Hier tippen…"></textarea>
+    </div>
+  </div>
+
+  <!-- KLICK-GAME -->
+  <div class="window" id="game">
+    <div class="titlebar"><span class="title">🎮 Klick-Game</span><div class="winBtns"><div class="winBtn" onclick="minimizeWindow('game')">—</div><div class="winBtn close" onclick="closeWindow('game')">✕</div></div></div>
+    <div class="content" style="padding:0;height:calc(100% - 44px);position:relative">
+      <div id="gameLockOverlay">
+        <div class="gameLockIcon">⏰</div>
+        <div class="gameLockTitle">TAGESLIMIT ERREICHT</div>
+        <div class="gameLockText">Du hast dein heutiges Limit für diese App erreicht.</div>
+        <div id="requestBtnState"><div class="gameLockBtn" onclick="requestMoreTime()">Nach mehr Zeit fragen</div></div>
+        <div id="requestSentState">
+          <div class="requestSentCheck">✅</div>
+          <div class="requestSentTitle">Anfrage gesendet</div>
+          <div class="requestSentSub">Antwort ausstehend...</div>
+        </div>
+      </div>
+      <div id="gameWrapper">
+        <div id="shopPanel"><div class="shopHeader">🛒 Shop</div><div class="shopList" id="shopList"></div></div>
+        <div id="gameArea">
+          <div id="autoClickerField"></div>
+          <div id="cheatNotice">+10.000 Punkte ⚡</div>
+          <div id="scoreDisplay">
+            <div id="scoreLabel">Punkte</div>
+            <div id="scoreNum">0</div>
+            <div id="ptsPerClick">+1 pro Klick</div>
+          </div>
+          <div id="clickTarget" onclick="gameClick()"></div>
+          <div id="levelBadge">Level 1 · Kästchen</div>
+          <div id="gameTimerBar" style="display:none;display:flex">
+            <div id="gameTimerLabel">⏱ 00:00</div>
+            <div id="gameTimerTrack"><div id="gameTimerFill" style="width:100%"></div></div>
+          </div>
+        </div>
+        <div id="achievementPanel">
+          <div class="achHeader">🏆 Achievements</div>
+          <div class="achList" id="achList"></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- STORE — Light-themed -->
+  <div class="window" id="store">
+    <div class="titlebar"><span class="title">🏪 Store</span><div class="winBtns"><div class="winBtn" onclick="minimizeWindow('store')">—</div><div class="winBtn close" onclick="closeWindow('store')">✕</div></div></div>
+    <div class="content" style="padding:0;height:calc(100% - 44px);overflow:auto">
+      <div class="storeContent">
+        <div class="storeBanner">
+          <div class="storeBannerTitle">JOS Store</div>
+          <div class="storeBannerSub">Exklusive Apps für dein JulianOS</div>
+          <div class="storeBannerBadge">☀ Light Edition</div>
+        </div>
+        <div class="storeTitle">Empfohlen für dich</div>
+        <div class="storeGrid">
+          <div class="storeCard">
+            <div class="storeCardTop">
+              <div class="storeCardIconWrap">🛡️</div>
+              <div class="storeCardName">Virenschutz JOS</div>
+              <div class="storeCardSub">JOS Security · Kostenlos</div>
+              <div class="storeCardDesc">Schützt dein System rund um die Uhr vor Viren, Malware und unerwünschten Eindringlingen. Entwickelt exklusiv für JulianOS.</div>
+            </div>
+            <div class="storeCardBottom">
+              <div class="storeCardMeta">
+                <div class="storeRating">★★★★★ 5.0</div>
+                <div class="storeCategory">Sicherheit</div>
+              </div>
+              <button class="storeDownloadBtn" id="virusDlBtn" onclick="startAppDownload('virus')">Herunterladen</button>
+            </div>
+          </div>
+          <div class="storeCard">
+            <div class="storeCardTop">
+              <div class="storeCardIconWrap">🌐</div>
+              <div class="storeCardName">JOS-B1</div>
+              <div class="storeCardSub">JOS Labs · Kostenlos</div>
+              <div class="storeCardDesc">Surfe sicher im Internet. Maximale Privatsphäre und blitzschnelles Rendering — exklusiv für JulianOS.</div>
+            </div>
+            <div class="storeCardBottom">
+              <div class="storeCardMeta">
+                <div class="storeRating">★★★★★ 4.9</div>
+                <div class="storeCategory">Browser</div>
+              </div>
+              <button class="storeDownloadBtn" id="browserDlBtn" onclick="startAppDownload('browser')">Herunterladen</button>
+            </div>
+          </div>
+          <div class="storeCard">
+            <div class="storeCardTop">
+              <div class="storeCardIconWrap">🌤️</div>
+              <div class="storeCardName">Klick-Game Shader: Light</div>
+              <div class="storeCardSub">JOS Visual · Kostenlos</div>
+              <div class="storeCardDesc">Verwandle dein Klick-Game in ein helles, luftiges Erlebnis. Weißer bis hellblauer Hintergrund, schwarze Schrift — kein Datenverlust.</div>
+            </div>
+            <div class="storeCardBottom">
+              <div class="storeCardMeta">
+                <div class="storeRating">★★★★★ 5.0</div>
+                <div class="storeCategory">Visual</div>
+              </div>
+              <button class="storeDownloadBtn" id="shaderDlBtn" onclick="startAppDownload('shader')">Herunterladen</button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- EINSTELLUNGEN -->
+  <div class="window" id="settings">
+    <div class="titlebar"><span class="title">⚙️ Einstellungen</span><div class="winBtns"><div class="winBtn" onclick="minimizeWindow('settings')">—</div><div class="winBtn close" onclick="closeWindow('settings')">✕</div></div></div>
+    <div class="content" style="padding:0;height:calc(100% - 44px);overflow:auto">
+      <div class="settingsContent">
+        <div class="settingsTitle">Allgemein</div>
+        <div class="settingRow locked" id="settingPwRow">
+          <div style="width:100%">
+            <div class="settingLabel">Passwortschutz</div>
+            <div class="settingDesc">Beim Start wird das Admin-Passwort verlangt</div>
+            <div class="settingLockHint">🔒 Admin-Zugang erforderlich — installiere die Admin-App über den Geheimcode</div>
+            <div id="settingsPwChangeArea" style="display:none;margin-top:16px">
+              <div class="pwChangeBox">
+                <div style="font-size:11px;letter-spacing:3px;color:rgba(255,255,255,.3);text-transform:uppercase;margin-bottom:12px">Passwort ändern</div>
+                <div class="pwChangeField"><label>Aktuelles Passwort</label><input type="password" id="settPwOld" placeholder="••••••••"></div>
+                <div class="pwChangeField"><label>Neues Passwort</label><input type="password" id="settPwNew" placeholder="••••••••"></div>
+                <div class="pwChangeField"><label>Neues Passwort bestätigen</label><input type="password" id="settPwNew2" placeholder="••••••••"></div>
+                <button class="pwChangeBtn" onclick="changePassword('sett')">Passwort ändern</button>
+                <div class="pwChangeMsg" id="settPwMsg"></div>
+              </div>
+            </div>
+          </div>
+          <label class="toggle disabled" id="settingPwToggleWrap" style="align-self:flex-start;margin-top:4px">
+            <input type="checkbox" id="togglePwProtectSettings" disabled>
+            <span class="toggleSlider"></span>
+          </label>
+        </div>
+        <div class="settingsTitle" style="margin-top:20px">Hintergrundbild</div>
+        <div class="settingRow" style="flex-direction:column;align-items:flex-start;gap:14px">
+          <div><div class="settingLabel">Hintergrundbild wählen</div><div class="settingDesc">Wähle einen der 6 verfügbaren Hintergründe</div></div>
+          <div class="wallpaperGrid" id="wallpaperGrid">
+            <div class="wpOption" data-wp="0" onclick="setWallpaper(0)"></div>
+            <div class="wpOption" data-wp="1" onclick="setWallpaper(1)"></div>
+            <div class="wpOption" data-wp="2" onclick="setWallpaper(2)"></div>
+            <div class="wpOption" data-wp="3" onclick="setWallpaper(3)"></div>
+            <div class="wpOption" data-wp="4" onclick="setWallpaper(4)"></div>
+            <div class="wpOption" data-wp="5" onclick="setWallpaper(5)"></div>
+          </div>
+        </div>
+        <div class="settingsTitle" style="margin-top:20px">Benachrichtigungen</div>
+        <div class="settingRow" style="flex-direction:column;align-items:flex-start;gap:14px">
+          <div><div class="settingLabel">App-Benachrichtigungen</div><div class="settingDesc">Steuere, welche Apps Benachrichtigungen senden dürfen</div></div>
+          <div class="notifSection" id="notifSection"></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- NACHRICHTEN -->
+  <div class="window" id="messages">
+    <div class="titlebar"><span class="title">💬 Nachrichten</span><div class="winBtns"><div class="winBtn" onclick="minimizeWindow('messages')">—</div><div class="winBtn close" onclick="closeWindow('messages')">✕</div></div></div>
+    <div class="content" style="padding:0;height:calc(100% - 44px)">
+      <div id="msgApp">
+        <div id="msgSidebar"><div id="msgSidebarHeader">Nachrichten</div><div id="msgChatList"></div></div>
+        <div id="msgMain">
+          <div id="msgChatHeader">
+            <div id="msgChatHeaderAvatar"></div>
+            <div><div id="msgChatHeaderName"></div><div id="msgChatHeaderSub"></div></div>
+          </div>
+          <div id="msgBody"></div>
+          <div id="msgInputRow" style="display:none">
+            <input id="msgInput" type="text" placeholder="Nachricht schreiben..." onkeydown="if(event.key==='Enter')sendMsg()">
+            <div id="msgSendBtn" onclick="sendMsg()">➤</div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- VIRENSCHUTZ -->
+  <div class="window" id="virus">
+    <div class="titlebar"><span class="title">🛡️ Virenschutz JOS</span><div class="winBtns"><div class="winBtn" onclick="minimizeWindow('virus')">—</div><div class="winBtn close" onclick="closeWindow('virus')">✕</div></div></div>
+    <div class="content" style="padding:0;height:calc(100% - 44px)">
+      <div class="virusDashboard">
+        <div class="virusTile ok" id="virusTile1"><div class="virusTileIcon">🦠</div><div class="virusTileTitle">Viren</div><div class="virusTileCheck" id="virusCheck1">✅</div><div class="virusTileText" id="virusText1">Keine Viren entdeckt.</div></div>
+        <div class="virusTile warn" id="virusTile2"><div class="virusTileIcon">🔐</div><div class="virusTileTitle">Passwortschutz</div><div class="virusTileCheck" id="virusCheck2">⚠️</div><div class="virusTileText" id="virusText2">Aktiviere den Passwort-Schutz in den Einstellungen.</div></div>
+        <div class="virusTile ok" id="virusTile3"><div class="virusTileIcon">🛡️</div><div class="virusTileTitle">Schädl. Programme</div><div class="virusTileCheck" id="virusCheck3">✅</div><div class="virusTileText" id="virusText3">Keine Aktionen erforderlich.</div></div>
+        <div class="virusTile warn" id="virusTile4"><div class="virusTileIcon">👨‍👧</div><div class="virusTileTitle">Elternaufsicht</div><div class="virusTileCheck" id="virusCheck4">⚠️</div><div class="virusTileText" id="virusText4">Aktiviere die Elternaufsicht in den Einstellungen.</div></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- JOS-B1 BROWSER -->
+  <div class="window" id="browser">
+    <div class="titlebar">
+      <span class="title">🌐 JOS-B1</span>
+      <div class="winBtns" style="margin-left:auto"><div class="winBtn" onclick="minimizeWindow('browser')">—</div><div class="winBtn close" onclick="closeWindow('browser')">✕</div></div>
+    </div>
+    <div id="browserApp">
+      <div class="browserBar">
+        <div class="browserNavBtn" onclick="browserGoHome()" title="Home">⌂</div>
+        <div class="browserNavBtn" onclick="browserBack()" title="Zurück">←</div>
+        <div class="browserNavBtn" onclick="browserReload()" title="Neu laden">↻</div>
+        <div class="browserUrlWrap">
+          <div class="browserUrlLock">🔒</div>
+          <input class="browserUrlInput" id="browserUrlInput" type="text" placeholder="Suchen oder Adresse eingeben..." onkeydown="if(event.key==='Enter')browserNavigate(this.value)">
+          <div class="browserGoBtn" onclick="browserNavigate(document.getElementById('browserUrlInput').value)">↵</div>
+        </div>
+        <div class="browserSecBadge">🔒 JOSSSL</div>
+      </div>
+      <div class="browserBody" id="browserBody"></div>
+    </div>
+  </div>
+
+  <!-- SECRET -->
+  <div class="window" id="secret">
+    <div class="content" id="secretContent">
+      <div style="display:flex;justify-content:center;align-items:center;height:100%;font-size:48px;font-weight:bold">ADMIN-ZUGANG</div>
+    </div>
+  </div>
+
+  <!-- KLICK-GAME SHADER: LIGHT APP -->
+  <div class="window" id="shader">
+    <div class="titlebar"><span class="title">🌤️ Klick-Game Shader: Light</span><div class="winBtns"><div class="winBtn" onclick="minimizeWindow('shader')">—</div><div class="winBtn close" onclick="closeWindow('shader')">✕</div></div></div>
+    <div class="content" style="padding:0;height:calc(100% - 44px)">
+      <div class="shaderAppWindow">
+        <div style="font-size:52px;filter:drop-shadow(0 0 20px rgba(100,180,255,.4))">🌤️</div>
+        <div class="shaderTitle">Shader: Light</div>
+        <div class="shaderDesc">Ändere das Aussehen deines Klick-Games — kein Neustart nötig.</div>
+        <div class="shaderToggleRow">
+          <div class="shaderToggleLabel">
+            <div class="shaderToggleLabelTitle">Shader aktivieren</div>
+            <div class="shaderToggleLabelSub" id="shaderSubLabel">Shade ist deaktiviert</div>
+          </div>
+          <label class="shaderToggleBig">
+            <input type="checkbox" id="shaderToggleCheckbox" onchange="toggleShader(this.checked)">
+            <span class="shaderSlider"></span>
+          </label>
+        </div>
+        <div class="shaderInfoBox">
+          Keine Daten gehen verloren<br>
+          <span style="color:rgba(255,255,255,.2)">Spiel verändert sich nicht</span>
+        </div>
+        <div id="shaderStatusBadge" class="shaderStatusBadge off">AUS</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ADMIN OPTIONS — fullscreen window -->
+  <div class="window" id="adminOptions" style="position:relative">
+    <div class="titlebar"><span class="title">🔒 Admin-Optionen</span><div class="winBtns"><div class="winBtn" onclick="minimizeWindow('adminOptions')">—</div><div class="winBtn close" onclick="closeWindow('adminOptions')">✕</div></div></div>
+    <!-- PW GATE — shown on every open, with X and - -->
+    <div id="adminPwGate">
+      <div class="adminGateWinBtns">
+        <div class="adminGateWinBtn" onclick="minimizeWindow('adminOptions')" title="Minimieren">—</div>
+        <div class="adminGateWinBtn close" onclick="closeWindow('adminOptions')" title="Schließen">✕</div>
+      </div>
+      <div class="gateIcon">🔐</div>
+      <h2>ADMIN-ZUGANG</h2>
+      <input id="adminPwGateInput" type="password" placeholder="Passwort eingeben" onkeydown="if(event.key==='Enter')checkAdminGate()">
+      <button class="loginBtn" onclick="checkAdminGate()" style="padding:11px 36px;font-size:14px">Entsperren</button>
+      <div id="adminPwGateErr"></div>
+    </div>
+    <div class="content" id="adminOptionsContent" style="padding:0;height:calc(100% - 44px);overflow:auto;display:none">
+      <div class="adminContent">
+        <div class="adminTitle">System-Einstellungen</div>
+        <div class="adminSettingRow" style="flex-direction:column;align-items:flex-start;gap:0">
+          <div style="display:flex;align-items:center;justify-content:space-between;width:100%">
+            <div><div class="settingLabel">Passwortschutz</div><div class="settingDesc">Beim Start wird das Admin-Passwort verlangt</div></div>
+            <label class="toggle"><input type="checkbox" id="togglePwProtect" onchange="savePwSetting()"><span class="toggleSlider"></span></label>
+          </div>
+          <div style="width:100%;margin-top:20px">
+            <div class="pwChangeBox">
+              <div style="font-size:11px;letter-spacing:3px;color:rgba(255,255,255,.3);text-transform:uppercase;margin-bottom:12px">🔑 Passwort ändern</div>
+              <div class="pwChangeField"><label>Aktuelles Passwort</label><input type="password" id="adminPwOld" placeholder="••••••••"></div>
+              <div class="pwChangeField"><label>Neues Passwort</label><input type="password" id="adminPwNew" placeholder="••••••••"></div>
+              <div class="pwChangeField"><label>Neues Passwort bestätigen</label><input type="password" id="adminPwNew2" placeholder="••••••••"></div>
+              <button class="pwChangeBtn" onclick="changePassword('admin')">Passwort ändern</button>
+              <div class="pwChangeMsg" id="adminPwMsg"></div>
+            </div>
+          </div>
+        </div>
+        <div class="adminTitle" style="margin-top:24px">Kindersicherung</div>
+        <div class="adminSettingRow">
+          <div><div class="settingLabel">Spielzeit-Limit aktivieren</div><div class="settingDesc">Tägliches Limit für das Klick-Game</div></div>
+          <label class="toggle"><input type="checkbox" id="toggleGameLimit" onchange="saveGameLimitSetting()"><span class="toggleSlider"></span></label>
+        </div>
+        <div id="gameLimitOptions" style="display:none;flex-direction:column;gap:10px;margin-top:4px">
+          <div class="adminSettingRow" style="flex-direction:column;align-items:flex-start;gap:14px">
+            <div><div class="settingLabel">Tägliches Limit</div><div class="settingDesc">Maximale Spielzeit pro Tag</div></div>
+            <div style="display:flex;gap:8px;flex-wrap:wrap">
+              <div class="bonusTimeBtn" id="limit-5"  onclick="setGameLimit(5)"  style="padding:9px 14px;font-size:12px">5 Min</div>
+              <div class="bonusTimeBtn" id="limit-10" onclick="setGameLimit(10)" style="padding:9px 14px;font-size:12px">10 Min</div>
+              <div class="bonusTimeBtn" id="limit-15" onclick="setGameLimit(15)" style="padding:9px 14px;font-size:12px">15 Min</div>
+              <div class="bonusTimeBtn" id="limit-30" onclick="setGameLimit(30)" style="padding:9px 14px;font-size:12px">30 Min</div>
+              <div class="bonusTimeBtn" id="limit-60" onclick="setGameLimit(60)" style="padding:9px 14px;font-size:12px">1 Std</div>
+            </div>
+            <div id="gameLimitStatus" style="font-size:12px;color:rgba(255,165,0,.7);letter-spacing:1px"></div>
+          </div>
+          <div id="bonusRequestBanner" style="display:none;padding:16px 20px;border-radius:14px;background:rgba(255,165,0,.08);border:1px solid rgba(255,165,0,.25);gap:12px;align-items:center">
+            <div style="font-size:20px">🔔</div>
+            <div style="flex:1"><div style="font-size:14px;color:rgba(255,200,100,.9);letter-spacing:.5px">Dein Kind bittet um mehr Spielzeit</div><div style="font-size:11px;color:rgba(255,255,255,.3);margin-top:3px">Anfrage wartet auf deine Antwort</div></div>
+            <div class="gameLockBtn" onclick="showBonusOverlay()" style="padding:9px 16px;font-size:13px">Antworten</div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+</div><!-- end #desktop -->
+
+<script>
+// ══════════════════════════════════════════
+// PASSWORT
+// ══════════════════════════════════════════
+let currentPassword = localStorage.getItem('julianAdminPw') || 'JulAd14';
+
+function changePassword(ctx) {
+  const o  = document.getElementById(ctx==='admin'?'adminPwOld':'settPwOld');
+  const n  = document.getElementById(ctx==='admin'?'adminPwNew':'settPwNew');
+  const n2 = document.getElementById(ctx==='admin'?'adminPwNew2':'settPwNew2');
+  const m  = document.getElementById(ctx==='admin'?'adminPwMsg':'settPwMsg');
+  function msg(t,ok){m.textContent=t;m.className='pwChangeMsg '+(ok?'ok':'err');if(!ok){m.style.animation='none';m.offsetHeight;m.style.animation='shake .3s ease';}setTimeout(()=>{m.textContent='';m.className='pwChangeMsg';},3500);}
+  if(!o.value.trim()){msg('Bitte aktuelles Passwort eingeben.',false);o.focus();return;}
+  if(o.value.trim()!==currentPassword){msg('Das aktuelle Passwort ist falsch.',false);o.value='';o.focus();return;}
+  if(!n.value.trim()){msg('Bitte neues Passwort eingeben.',false);n.focus();return;}
+  if(n.value.trim().length<4){msg('Passwort muss mindestens 4 Zeichen haben.',false);n.focus();return;}
+  if(n.value.trim()!==n2.value.trim()){msg('Die neuen Passwörter stimmen nicht überein.',false);n2.value='';n2.focus();return;}
+  currentPassword=n.value.trim();localStorage.setItem('julianAdminPw',currentPassword);
+  o.value='';n.value='';n2.value='';msg('✓ Passwort erfolgreich geändert!',true);
+}
+
+// ══════════════════════════════════════════
+// PW OVERLAY — X / — buttons
+// ══════════════════════════════════════════
+function closePwOverlay(){
+  document.getElementById('pwOverlay').classList.add('hidden');
+  document.getElementById('login').style.display='flex';
+}
+function minimizePwOverlay(){
+  // just go back to login screen
+  document.getElementById('pwOverlay').classList.add('hidden');
+  document.getElementById('login').style.display='flex';
+}
+
+// ══════════════════════════════════════════
+// ADMIN PW GATE
+// ══════════════════════════════════════════
+function showAdminGate() {
+  document.getElementById('adminPwGate').style.display = 'flex';
+  document.getElementById('adminOptionsContent').style.display = 'none';
+  document.getElementById('adminPwGateInput').value = '';
+  document.getElementById('adminPwGateErr').textContent = '';
+  setTimeout(()=>document.getElementById('adminPwGateInput').focus(), 80);
+}
+
+function checkAdminGate() {
+  const inp = document.getElementById('adminPwGateInput');
+  const err = document.getElementById('adminPwGateErr');
+  if(inp.value === currentPassword) {
+    document.getElementById('adminPwGate').style.display = 'none';
+    document.getElementById('adminOptionsContent').style.display = 'block';
+    loadPwSetting();
+    loadAdminGameSettings();
+  } else {
+    err.textContent = 'Passwort falsch';
+    err.style.animation='none';err.offsetHeight;err.style.animation='shake .3s ease';
+    inp.value='';inp.focus();
+  }
+}
+
+// ══════════════════════════════════════════
+// SHADER
+// ══════════════════════════════════════════
+let shaderOn = localStorage.getItem('josShaderOn') === '1';
+
+function applyShader(on) {
+  shaderOn = on;
+  localStorage.setItem('josShaderOn', on ? '1' : '0');
+  const gw = document.getElementById('gameWrapper');
+  if(on) gw.classList.add('shaderOn');
+  else gw.classList.remove('shaderOn');
+  // Update shader app UI
+  const cb = document.getElementById('shaderToggleCheckbox');
+  if(cb) cb.checked = on;
+  const sub = document.getElementById('shaderSubLabel');
+  if(sub) sub.textContent = on ? 'Shader ist aktiv' : 'Shader ist deaktiviert';
+  const badge = document.getElementById('shaderStatusBadge');
+  if(badge){ badge.textContent = on ? 'AN' : 'AUS'; badge.className = 'shaderStatusBadge ' + (on ? 'on' : 'off'); }
+}
+
+function toggleShader(on) { applyShader(on); }
+
+function initShader() { applyShader(shaderOn); }
+
+// ══════════════════════════════════════════
+// WALLPAPER
+// ══════════════════════════════════════════
+const WALLPAPERS=[
+  {style:'radial-gradient(circle at 15% 15%,rgba(0,255,255,.10),transparent 35%),radial-gradient(circle at 85% 85%,rgba(180,0,255,.10),transparent 35%),#000',thumb:'radial-gradient(circle at 20% 20%,rgba(0,255,255,.5),transparent 60%),radial-gradient(circle at 80% 80%,rgba(180,0,255,.5),transparent 60%),#111'},
+  {style:'#00193a',thumb:'linear-gradient(135deg,#001428,#003366)'},
+  {style:'#f0f0f0',thumb:'linear-gradient(135deg,#ffffff,#dddddd)'},
+  {style:'radial-gradient(circle at 50% 50%,#3a0000,#000)',thumb:'radial-gradient(circle,#550000,#1a0000)'},
+  {style:'radial-gradient(circle at 50% 30%,rgba(100,200,255,.3),transparent 60%),#001a2e',thumb:'radial-gradient(circle,#5bc8ff,#003355)'},
+  {style:'linear-gradient(135deg,#7dd3fc 0%,#a78bfa 50%,#c084fc 100%)',thumb:'linear-gradient(135deg,#7dd3fc,#a78bfa,#c084fc)'},
+];
+let currentWp = parseInt(localStorage.getItem('julianWallpaper')||'0');
+function setWallpaper(i){currentWp=i;localStorage.setItem('julianWallpaper',i);document.getElementById('desktopBg').style.background=WALLPAPERS[i].style;document.querySelectorAll('.wpOption').forEach((el,j)=>el.classList.toggle('active',j===i));}
+function initWallpaperGrid(){document.querySelectorAll('.wpOption').forEach((el,i)=>{el.style.background=WALLPAPERS[i].thumb;el.classList.toggle('active',i===currentWp);});document.getElementById('desktopBg').style.background=WALLPAPERS[currentWp].style;}
+
+// ══════════════════════════════════════════
+// VIRUS DASHBOARD
+// ══════════════════════════════════════════
+function updateVirusDashboard(){
+  const pwOn=localStorage.getItem('julianPwProtect')==='1';
+  const glOn=localStorage.getItem('julianGameLimit')==='1';
+  const t2=document.getElementById('virusTile2'),c2=document.getElementById('virusCheck2'),tx2=document.getElementById('virusText2');
+  if(pwOn){t2.className='virusTile ok';c2.textContent='✅';tx2.textContent='Passwort-Schutz ist aktiv.';}
+  else{t2.className='virusTile warn';c2.textContent='⚠️';tx2.textContent='Aktiviere den Passwort-Schutz in den Einstellungen.';}
+  const t4=document.getElementById('virusTile4'),c4=document.getElementById('virusCheck4'),tx4=document.getElementById('virusText4');
+  if(glOn){t4.className='virusTile ok';c4.textContent='✅';tx4.textContent='Elternaufsicht ist aktiviert.';}
+  else{t4.className='virusTile warn';c4.textContent='⚠️';tx4.textContent='Aktiviere die Elternaufsicht in den Einstellungen.';}
+}
+
+// ══════════════════════════════════════════
+// APP DOWNLOADS
+// ══════════════════════════════════════════
+let virusInstalled   = localStorage.getItem('josVirusInstalled')==='1';
+let browserInstalled = localStorage.getItem('josBrowserInstalled')==='1';
+let shaderInstalled  = localStorage.getItem('josShaderInstalled')==='1';
+const DL_CFG={
+  virus:  {icon:'🛡️',name:'Virenschutz JOS',   sub:'JOS Security · v1.0'},
+  browser:{icon:'🌐',name:'JOS-B1',             sub:'JOS Labs · v1.0'},
+  shader: {icon:'🌤️',name:'Klick-Game Shader: Light', sub:'JOS Visual · v1.0'},
+};
+
+function startAppDownload(id){
+  if(id==='virus'&&virusInstalled)return;
+  if(id==='browser'&&browserInstalled)return;
+  if(id==='shader'&&shaderInstalled)return;
+  const c=DL_CFG[id];
+  document.getElementById('dlAppIcon').textContent=c.icon;
+  document.getElementById('dlAppName').textContent=c.name;
+  document.getElementById('dlAppSub').textContent=c.sub;
+  const bar=document.getElementById('dlBar'),st=document.getElementById('dlStatusText'),done=document.getElementById('dlDoneText');
+  bar.style.transition='none';bar.style.width='0%';st.style.display='block';done.style.display='none';
+  document.getElementById('dlModal').classList.add('show');
+  setTimeout(()=>{bar.style.transition='width 8s cubic-bezier(.25,.1,.25,1)';bar.style.width='100%';},80);
+  setTimeout(()=>{st.style.display='none';done.style.display='block';setTimeout(()=>{document.getElementById('dlModal').classList.remove('show');if(id==='virus')installVirusApp();else if(id==='browser')installBrowserApp();else installShaderApp();},1000);},8200);
+}
+
+function installVirusApp(){
+  virusInstalled=true;localStorage.setItem('josVirusInstalled','1');
+  const b=document.getElementById('virusDlBtn');if(b){b.textContent='✓ Installiert';b.classList.add('installed');}
+  document.getElementById('task-virus').classList.remove('hidden');
+  if(!document.getElementById('di-virus')){const ic=document.createElement('div');ic.className='desktopIcon';ic.id='di-virus';ic.onclick=()=>openWindow('virus');ic.innerHTML='🛡️<span>Virenschutz</span>';document.getElementById('desktopIconsRow').appendChild(ic);}
+  buildNotifSection();
+}
+function installBrowserApp(){
+  browserInstalled=true;localStorage.setItem('josBrowserInstalled','1');
+  const b=document.getElementById('browserDlBtn');if(b){b.textContent='✓ Installiert';b.classList.add('installed');}
+  document.getElementById('task-browser').classList.remove('hidden');
+  if(!document.getElementById('di-browser')){const ic=document.createElement('div');ic.className='desktopIcon';ic.id='di-browser';ic.onclick=()=>openWindow('browser');ic.innerHTML='🌐<span>JOS-B1</span>';document.getElementById('desktopIconsRow').appendChild(ic);}
+  buildNotifSection();renderBrowserHome();
+}
+function installShaderApp(){
+  shaderInstalled=true;localStorage.setItem('josShaderInstalled','1');
+  const b=document.getElementById('shaderDlBtn');if(b){b.textContent='✓ Installiert';b.classList.add('installed');}
+  document.getElementById('task-shader').classList.remove('hidden');
+  if(!document.getElementById('di-shader')){const ic=document.createElement('div');ic.className='desktopIcon';ic.id='di-shader';ic.onclick=()=>openWindow('shader');ic.innerHTML='🌤️<span>Shader</span>';document.getElementById('desktopIconsRow').appendChild(ic);}
+  buildNotifSection();
+  openWindow('shader');
+}
+
+function restoreInstalledApps(){
+  if(virusInstalled){
+    const b=document.getElementById('virusDlBtn');if(b){b.textContent='✓ Installiert';b.classList.add('installed');}
+    document.getElementById('task-virus').classList.remove('hidden');
+    if(!document.getElementById('di-virus')){const ic=document.createElement('div');ic.className='desktopIcon';ic.id='di-virus';ic.onclick=()=>openWindow('virus');ic.innerHTML='🛡️<span>Virenschutz</span>';document.getElementById('desktopIconsRow').appendChild(ic);}
+  }
+  if(browserInstalled){
+    const b=document.getElementById('browserDlBtn');if(b){b.textContent='✓ Installiert';b.classList.add('installed');}
+    document.getElementById('task-browser').classList.remove('hidden');
+    if(!document.getElementById('di-browser')){const ic=document.createElement('div');ic.className='desktopIcon';ic.id='di-browser';ic.onclick=()=>openWindow('browser');ic.innerHTML='🌐<span>JOS-B1</span>';document.getElementById('desktopIconsRow').appendChild(ic);}
+  }
+  if(shaderInstalled){
+    const b=document.getElementById('shaderDlBtn');if(b){b.textContent='✓ Installiert';b.classList.add('installed');}
+    document.getElementById('task-shader').classList.remove('hidden');
+    if(!document.getElementById('di-shader')){const ic=document.createElement('div');ic.className='desktopIcon';ic.id='di-shader';ic.onclick=()=>openWindow('shader');ic.innerHTML='🌤️<span>Shader</span>';document.getElementById('desktopIconsRow').appendChild(ic);}
+  }
+}
+
+// ══════════════════════════════════════════
+// BROWSER
+// ══════════════════════════════════════════
+const WEBSITES=[{
+  id:'julianosinfo',name:'JOS-Informationen',url:'julianos.infos.net',
+  desc:'Informationen über JulianOS und Kontaktdaten des Entwicklers',year:2026,
+  keywords:['julesir','julesiros','julian','julianos','jos','jos-b1','admin','owner','infos','informationen','julianos informationen','julesir infos'],
+  render:renderJulianOSInfoPage
+}];
+
+let browserLastQuery='',browserCurrentPage=null;
+function queryMatchesSite(q,site){const ql=q.toLowerCase();return site.keywords.some(kw=>ql.includes(kw.toLowerCase()));}
+function isDirectAddress(q){const ql=q.trim().toLowerCase();return WEBSITES.find(s=>ql===s.url.toLowerCase());}
+function browserNavigate(q){
+  q=q.trim();if(!q)return;browserLastQuery=q;
+  const direct=isDirectAddress(q);
+  if(direct){document.getElementById('browserUrlInput').value=direct.url;browserCurrentPage='site:'+direct.id;direct.render();return;}
+  document.getElementById('browserUrlInput').value=q;browserCurrentPage='search:'+q;renderSearchResults(q);
+}
+function renderBrowserHome(){
+  browserCurrentPage=null;document.getElementById('browserUrlInput').value='';
+  document.getElementById('browserBody').innerHTML='<div class="browserHomePage"><div class="browserHomeLogo">△</div><div class="browserHomeTitle">JOS-B1 · Sicherer Browser</div></div>';
+}
+function renderSearchResults(q){
+  const matches=WEBSITES.filter(s=>queryMatchesSite(q,s));
+  const body=document.getElementById('browserBody');
+  if(matches.length===0){body.innerHTML=`<div class="browserNoResults"><div class="browserNoResultsGlyph">🔍</div><div class="browserNoResultsTitle">Keine Ergebnisse gefunden</div><div class="browserNoResultsSub">Für diese Suche gibt es noch keine passenden Seiten.</div><div class="browserNoResultsQuery">${q.replace(/</g,'&lt;')}</div></div>`;return;}
+  let html=`<div class="browserResultsPage"><div class="browserResultsMeta">${matches.length} Ergebnis${matches.length>1?'se':''} für „${q.replace(/</g,'&lt;')}"</div>`;
+  matches.forEach((s,i)=>{html+=`<div class="browserResultItem" style="animation-delay:${i*0.06}s"><div class="browserResultUrl">${s.url}</div><div class="browserResultTopRow"><span class="browserResultName" onclick="openSite('${s.id}')">${s.name}</span><span class="browserResultYear">${s.year}</span></div><div class="browserResultDesc">${s.desc}</div></div>`;});
+  html+='</div>';body.innerHTML=html;
+}
+function openSite(id){const site=WEBSITES.find(s=>s.id===id);if(!site)return;document.getElementById('browserUrlInput').value=site.url;browserCurrentPage='site:'+id;site.render();}
+function renderJulianOSInfoPage(){
+  document.getElementById('browserBody').innerHTML=`<div class="browserInfoPage"><div class="browserInfoInner"><div class="browserInfoHeader"><div class="browserInfoLogo">△</div><div><div class="browserInfoSiteTitle">Julian OS Informationen</div><div class="browserInfoSiteSub">julianos.infos.net · JOS v6</div></div></div><div class="browserInfoSection"><div class="browserInfoSectionTitle">Über uns</div><div class="browserInfoBody">JulianOS ist ein professionelles Unternehmen, welches sich möglichst gut nach den Bedürfnissen von seinen Nutzern richtet. Wenn Sie Verbesserungsvorschläge an uns haben, senden sie uns bitte eine Email über eine der folgenden Adressen:</div><div class="browserInfoMailRow"><div class="browserInfoMail"><span>📧</span> julian.kuehn@online.de</div><div class="browserInfoMail"><span>📧</span> julesir@protonmail.me</div><div class="browserInfoMail"><span>📧</span> julian.kuehn@humboldtschule-berlin.eu</div></div></div><div class="browserInfoFooter">© JulianOS 2026 · Alle Rechte vorbehalten</div></div></div>`;
+}
+function browserBack(){renderBrowserHome();}
+function browserReload(){if(!browserCurrentPage)renderBrowserHome();else if(browserCurrentPage.startsWith('search:'))renderSearchResults(browserCurrentPage.slice(7));else if(browserCurrentPage.startsWith('site:'))openSite(browserCurrentPage.slice(5));}
+function browserGoHome(){renderBrowserHome();}
+
+// ══════════════════════════════════════════
+// NOTIZEN
+// ══════════════════════════════════════════
+let notesSavedContent=localStorage.getItem('julianNotesSaved')||'';
+let notesHasUnsaved=false;
+function notesInit(){document.getElementById('notesArea').value=notesSavedContent;notesHasUnsaved=false;updateNotesDirty();}
+document.addEventListener('DOMContentLoaded',()=>{
+  const ta=document.getElementById('notesArea');
+  if(ta)ta.addEventListener('input',()=>{notesHasUnsaved=true;updateNotesDirty();if(ta.value.includes('JULESIR#'))triggerSecretCode();});
+});
+function updateNotesDirty(){const dot=document.getElementById('notesUnsavedDot');const lbl=document.getElementById('notesFileLabel');if(dot)dot.classList.toggle('show',notesHasUnsaved);if(lbl)lbl.textContent=notesHasUnsaved?'— ungespeichert':'';}
+function notesSave(){closeNotesMenu();const ta=document.getElementById('notesArea');notesSavedContent=ta.value;localStorage.setItem('julianNotesSaved',notesSavedContent);notesHasUnsaved=false;updateNotesDirty();const lbl=document.getElementById('notesFileLabel');if(lbl){lbl.style.color='rgba(0,220,100,.8)';lbl.textContent='✓ Gespeichert';setTimeout(()=>{lbl.style.color='';updateNotesDirty();},1800);}}
+function notesNew(){closeNotesMenu();if(notesHasUnsaved&&!confirm('Nicht gespeicherte Änderungen verwerfen?'))return;document.getElementById('notesArea').value='';notesHasUnsaved=false;updateNotesDirty();}
+function closeNotes(){document.getElementById('notesArea').value=notesSavedContent;notesHasUnsaved=false;updateNotesDirty();closeWindow('notes');}
+function toggleNotesMenu(e){e.stopPropagation();const dd=document.getElementById('notesDropdown');const btn=document.getElementById('notesFileBtn');const open=dd.classList.contains('open');dd.classList.toggle('open',!open);btn.classList.toggle('active',!open);}
+function closeNotesMenu(){document.getElementById('notesDropdown').classList.remove('open');document.getElementById('notesFileBtn').classList.remove('active');}
+document.addEventListener('click',e=>{const dd=document.getElementById('notesDropdown');const btn=document.getElementById('notesFileBtn');if(dd&&!dd.contains(e.target)&&btn&&!btn.contains(e.target))closeNotesMenu();});
+document.addEventListener('keydown',e=>{if((e.ctrlKey||e.metaKey)&&e.key==='s'){if(document.getElementById('notes')?.style.display==='block'){e.preventDefault();notesSave();}}if((e.ctrlKey||e.metaKey)&&e.key==='n'){if(document.getElementById('notes')?.style.display==='block'){e.preventDefault();notesNew();}}});
+
+function triggerSecretCode(){
+  const sec=document.getElementById('secret');
+  if(sec&&sec.style.display!=='block'){
+    sec.style.display='block';winState['secret']='open';zCtr++;sec.style.zIndex=zCtr;updateMenuBtnVisibility();
+    setTimeout(()=>{document.getElementById('secretContent').innerHTML=`<div style="padding:60px;text-align:center;display:flex;flex-direction:column;align-items:center;gap:16px"><h1 style="font-weight:300;letter-spacing:6px;font-size:24px">ADMIN WIRD INSTALLIERT…</h1><div style="font-size:13px;color:rgba(255,255,255,.4);letter-spacing:1px">Admin-App wird zum System hinzugefügt.</div></div>`;
+      setTimeout(()=>{document.getElementById('secret').style.display='none';winState['secret']='closed';installAdminApp();updateMenuBtnVisibility();},2000);},800);
+  }
+}
+function installAdminApp(){
+  adminUnlocked=true;
+  document.getElementById('task-adminOptions').classList.remove('hidden');
+  if(!document.getElementById('di-admin')){const ic=document.createElement('div');ic.className='desktopIcon';ic.id='di-admin';ic.onclick=()=>openWindow('adminOptions');ic.innerHTML='🔒<span>Admin</span>';document.getElementById('desktopIconsRow').appendChild(ic);}
+  updateSettingsPwRow();buildNotifSection();openWindow('adminOptions');
+}
+
+// ══════════════════════════════════════════
+// NOTIFS
+// ══════════════════════════════════════════
+let adminUnlocked=false;
+function getNotifApps(){
+  const apps=[
+    {id:'notes',label:'Notizen',icon:'📝'},
+    {id:'game',label:'Klick-Game',icon:'🎮'},
+    {id:'store',label:'Store',icon:'🏪'},
+    {id:'settings',label:'Einstellungen',icon:'⚙️'},
+    {id:'messages',label:'Nachrichten',icon:'💬'},
+  ];
+  if(virusInstalled)   apps.push({id:'virus',label:'Virenschutz JOS',icon:'🛡️'});
+  if(browserInstalled) apps.push({id:'browser',label:'JOS-B1',icon:'🌐'});
+  if(shaderInstalled)  apps.push({id:'shader',label:'Klick-Game Shader: Light',icon:'🌤️'});
+  if(adminUnlocked)    apps.push({id:'adminOptions',label:'Admin',icon:'🔒'});
+  return apps;
+}
+function loadNotifSetting(id){return localStorage.getItem('julianNotif_'+id)!=='0';}
+function saveNotifSetting(id,v){localStorage.setItem('julianNotif_'+id,v?'1':'0');}
+function buildNotifSection(){
+  const sec=document.getElementById('notifSection');sec.innerHTML='';
+  getNotifApps().forEach(app=>{
+    const on=loadNotifSetting(app.id);
+    const row=document.createElement('div');row.className='notifRow';
+    row.innerHTML=`<div class="notifAppName">${app.icon} ${app.label}</div><label class="toggle"><input type="checkbox" id="notif-${app.id}" ${on?'checked':''}><span class="toggleSlider"></span></label>`;
+    sec.appendChild(row);
+    row.querySelector('input').addEventListener('change',function(){saveNotifSetting(app.id,this.checked);});
+  });
+}
+
+// ══════════════════════════════════════════
+// GAME LIMIT
+// ══════════════════════════════════════════
+let gameLimitMinutes=0,gameSecondsUsed=0,gameTimerInterval=null,gameLocked=false,bonusGrantedSeconds=0,bonusRequested=false;
+function getTodayKey(){const d=new Date();return`julianGameUsed_${d.getFullYear()}_${d.getMonth()}_${d.getDate()}`;}
+function loadGameUsed(){return parseInt(localStorage.getItem(getTodayKey())||'0');}
+function saveGameUsed(){localStorage.setItem(getTodayKey(),gameSecondsUsed);}
+function saveGameLimitSetting(){const on=document.getElementById('toggleGameLimit').checked;localStorage.setItem('julianGameLimit',on?'1':'0');document.getElementById('gameLimitOptions').style.display=on?'flex':'none';updateGameLimitStatus();checkGameLock();updateTimerBarVisibility();updateVirusDashboard();}
+function updateTimerBarVisibility(){const on=localStorage.getItem('julianGameLimit')==='1';document.getElementById('gameTimerBar').style.display=(on&&gameLimitMinutes)?'flex':'none';}
+function setGameLimit(mins){gameLimitMinutes=mins;localStorage.setItem('julianGameLimitMins',mins);document.querySelectorAll('[id^="limit-"]').forEach(el=>{el.style.background='';el.style.border='';});const btn=document.getElementById('limit-'+mins);if(btn){btn.style.background='rgba(0,200,100,.3)';btn.style.border='1px solid rgba(0,200,100,.6)';}updateGameLimitStatus();checkGameLock();updateTimerBarVisibility();}
+function updateGameLimitStatus(){const el=document.getElementById('gameLimitStatus');if(!el)return;const on=localStorage.getItem('julianGameLimit')==='1';if(!on||!gameLimitMinutes){el.textContent='';return;}const used=Math.floor(gameSecondsUsed/60);const rem=Math.max(0,Math.ceil(((gameLimitMinutes*60+bonusGrantedSeconds)-gameSecondsUsed)/60));el.textContent=`Heute gespielt: ${used} Min · Verbleibend: ${rem} Min`;}
+function checkGameLock(){const on=localStorage.getItem('julianGameLimit')==='1';if(!on||!gameLimitMinutes){gameLocked=false;document.getElementById('gameLockOverlay').classList.remove('show');return;}if(gameSecondsUsed>=(gameLimitMinutes*60+bonusGrantedSeconds)){gameLocked=true;document.getElementById('gameLockOverlay').classList.add('show');}else{gameLocked=false;document.getElementById('gameLockOverlay').classList.remove('show');}}
+function startGameTimer(){if(gameTimerInterval)return;const on=localStorage.getItem('julianGameLimit')==='1';if(!on||!gameLimitMinutes)return;updateTimerBarVisibility();updateTimerDisplay();gameTimerInterval=setInterval(()=>{if(gameLocked)return;gameSecondsUsed++;saveGameUsed();updateTimerDisplay();updateGameLimitStatus();checkGameLock();},1000);}
+function stopGameTimer(){if(gameTimerInterval){clearInterval(gameTimerInterval);gameTimerInterval=null;}}
+function updateTimerDisplay(){const lim=gameLimitMinutes*60+bonusGrantedSeconds,rem=Math.max(0,lim-gameSecondsUsed);const m=String(Math.floor(rem/60)).padStart(2,'0'),s=String(rem%60).padStart(2,'0');document.getElementById('gameTimerLabel').textContent=`⏱ ${m}:${s}`;const pct=lim>0?(rem/lim)*100:100;const fill=document.getElementById('gameTimerFill');fill.style.width=pct+'%';fill.style.background=pct<20?'linear-gradient(90deg,#ff4444,#ff8800)':'linear-gradient(90deg,#00c8ff,#b400ff)';}
+function requestMoreTime(){if(bonusRequested)return;bonusRequested=true;document.getElementById('requestBtnState').style.display='none';document.getElementById('requestSentState').style.display='flex';const ta=document.getElementById('task-adminOptions');if(!ta.classList.contains('hidden')&&!ta.querySelector('.notifBadge')){const b=document.createElement('div');b.className='notifBadge';ta.appendChild(b);}const ban=document.getElementById('bonusRequestBanner');if(ban)ban.style.display='flex';}
+function showBonusOverlay(){document.getElementById('bonusTimeOverlay').classList.add('show');}
+function closeBonusOverlay(){document.getElementById('bonusTimeOverlay').classList.remove('show');}
+function grantBonus(mins){closeBonusOverlay();bonusRequested=false;bonusGrantedSeconds+=mins*60;gameLocked=false;document.getElementById('gameLockOverlay').classList.remove('show');document.getElementById('requestBtnState').style.display='block';document.getElementById('requestSentState').style.display='none';const ban=document.getElementById('bonusRequestBanner');if(ban)ban.style.display='none';const ta=document.getElementById('task-adminOptions');const badge=ta.querySelector('.notifBadge');if(badge)badge.remove();updateTimerDisplay();updateGameLimitStatus();updateTimerBarVisibility();if(!gameTimerInterval)startGameTimer();}
+function denyBonus(){closeBonusOverlay();bonusRequested=false;document.getElementById('requestBtnState').style.display='block';document.getElementById('requestSentState').style.display='none';const ban=document.getElementById('bonusRequestBanner');if(ban)ban.style.display='none';const ta=document.getElementById('task-adminOptions');const badge=ta.querySelector('.notifBadge');if(badge)badge.remove();}
+function loadAdminGameSettings(){const on=localStorage.getItem('julianGameLimit')==='1';document.getElementById('toggleGameLimit').checked=on;document.getElementById('gameLimitOptions').style.display=on?'flex':'none';const saved=parseInt(localStorage.getItem('julianGameLimitMins')||'0');if(saved){gameLimitMinutes=saved;setGameLimit(saved);}updateGameLimitStatus();}
+
+// ══════════════════════════════════════════
+// SHOP
+// ══════════════════════════════════════════
+const SHOP_ITEMS=[
+  {id:'ac1',name:'Autoklicker Lv.1',desc:'1 Punkt pro Sekunde automatisch',price:300,pps:1,lvl:0},
+  {id:'ac2',name:'Autoklicker Lv.2',desc:'2 Punkte pro Sekunde',price:750,pps:2,lvl:1},
+  {id:'ac3',name:'Autoklicker Lv.3',desc:'3 Punkte pro Sekunde',price:1500,pps:3,lvl:2},
+  {id:'ac4',name:'Autoklicker Lv.4',desc:'5 Punkte pro Sekunde',price:3000,pps:5,lvl:3},
+  {id:'ac5',name:'Autoklicker Lv.5',desc:'8 Punkte pro Sekunde',price:5000,pps:8,lvl:4},
+];
+let purchasedItems=new Set(),totalPPS=0,autoClickInterval=null;
+function buildShop(){
+  const list=document.getElementById('shopList');list.innerHTML='';
+  SHOP_ITEMS.forEach(item=>{
+    const bought=purchasedItems.has(item.id);
+    const div=document.createElement('div');div.className='shopItem'+(bought?' bought':'');div.id='shop-'+item.id;
+    div.innerHTML=`<div class="shopItemIcon">${['📦','🔺','⚪','⬠','🥚'][item.lvl]}</div><div class="shopItemName">${item.name}</div><div class="shopItemDesc">${item.desc}</div>${bought?'<div class="shopItemBought">✓ Gekauft</div>':`<div class="shopItemPrice">▸ ${item.price} Punkte</div>`}`;
+    if(!bought)div.onclick=()=>buyItem(item.id);
+    list.appendChild(div);
+  });
+}
+function buyItem(id){const item=SHOP_ITEMS.find(i=>i.id===id);if(!item||purchasedItems.has(id))return;if(score<item.price){const el=document.getElementById('shop-'+id);if(el){el.classList.add('shopItemCantAfford');setTimeout(()=>el.classList.remove('shopItemCantAfford'),600);}return;}score-=item.price;purchasedItems.add(id);totalPPS+=item.pps;updateScoreDisplay();buildShop();spawnAutoShape(item.lvl);startAutoClicker();}
+function startAutoClicker(){if(autoClickInterval)return;autoClickInterval=setInterval(()=>{if(gameLocked||totalPPS<=0)return;score+=totalPPS;updateScoreDisplay();checkAchievements(score);buildShop();},1000);}
+function spawnAutoShape(lvl){const field=document.getElementById('autoClickerField'),el=document.createElement('div');el.className='autoClickShape';const size=28+lvl*4,col=['#ff2222','#ff6600','#ffcc00','#00ff88','#00c8ff'][lvl]||'#fff',glow=`drop-shadow(0 0 6px ${col})`;el.style.left=(10+Math.random()*75)+'%';el.style.top=(10+Math.random()*75)+'%';el.style.animationDelay=(Math.random()*2)+'s';if(lvl===0)el.innerHTML=`<svg width="${size}" height="${size}"><rect x="2" y="2" width="${size-4}" height="${size-4}" rx="4" fill="${col}" style="filter:${glow}"/></svg>`;else if(lvl===1)el.innerHTML=`<svg width="${size}" height="${size}" viewBox="0 0 100 100"><polygon points="50,5 95,95 5,95" fill="${col}" style="filter:${glow}"/></svg>`;else if(lvl===2)el.innerHTML=`<svg width="${size}" height="${size}" viewBox="0 0 100 100"><circle cx="50" cy="50" r="46" fill="${col}" style="filter:${glow}"/></svg>`;else if(lvl===3){const pts=Array.from({length:5},(_,i)=>{const a=(Math.PI*2*i/5)-Math.PI/2;return`${50+46*Math.cos(a)},${50+46*Math.sin(a)}`;}).join(' ');el.innerHTML=`<svg width="${size}" height="${size}" viewBox="0 0 100 100"><polygon points="${pts}" fill="${col}" style="filter:${glow}"/></svg>`;}else el.innerHTML=`<svg width="${size*1.5}" height="${size}" viewBox="0 0 150 80"><ellipse cx="75" cy="40" rx="72" ry="37" fill="${col}" style="filter:${glow}"/></svg>`;field.appendChild(el);}
+function updateShopVisibility(){const p=document.getElementById('shopPanel');if(score>=100&&!p.classList.contains('visible'))p.classList.add('visible');}
+
+// ══════════════════════════════════════════
+// CHEAT CODE
+// ══════════════════════════════════════════
+let cheatSeq='',cheatCooldown=false;
+document.addEventListener('keydown',function(e){
+  if(document.activeElement.tagName==='INPUT'||document.activeElement.tagName==='TEXTAREA')return;
+  cheatSeq+=e.key;if(cheatSeq.length>2)cheatSeq=cheatSeq.slice(-2);
+  if(/^[jJ][uU]$/.test(cheatSeq)){
+    const gw=document.getElementById('game');
+    if(gw&&gw.style.display==='block'&&!gameLocked&&!cheatCooldown){
+      cheatCooldown=true;score+=10000;updateScoreDisplay();
+      const n=document.getElementById('scoreNum');n.classList.remove('pop');n.offsetHeight;n.classList.add('pop');setTimeout(()=>n.classList.remove('pop'),200);
+      renderTarget();checkAchievements(score);updateShopVisibility();buildShop();
+      const nc=document.getElementById('cheatNotice');nc.classList.add('show');setTimeout(()=>nc.classList.remove('show'),2000);
+      setTimeout(()=>{cheatCooldown=false;},10000);
+    }
+    cheatSeq='';
+  }
+});
+
+// ══════════════════════════════════════════
+// NACHRICHTEN
+// ══════════════════════════════════════════
+const MSG_CHATS=[{id:'system',name:'System',icon:'🖥️',color:'rgba(0,200,255,.2)'},{id:'ai',name:'JOS-AI',icon:'🤖',color:'rgba(180,0,255,.2)'}];
+let activeChat='system',loginTime=null;
+const AI_GREET=/^(hallo|hi|hey|moin|servus|howdy|yo|sup|ey|jo|na|hello|ciao|bonjour|hola|salut)$/i;
+const AI_HOW=/^(wie\s*geht|alles\s*(gut|ok)\??|was\s*geht|how\s*are\s*you|how'?s\s*it).*$/i;
+const chatHistory={system:[],ai:[]};
+const FAQ_Q=['Wie ändere ich das Passwort?','Wie aktiviere ich die Elternaufsicht?','Wie komme ich in den Admin-Zugang?'];
+const FAQ_A=['Du änderst das Passwort in der Admin-App unter Passwortschutz → Passwort ändern.','Die Elternaufsicht aktivierst du in der Admin-App unter Kindersicherung.','Du kommst in den Admin-Zugang, indem du den Code JULESIR# in die Notizen schreibst.'];
+let faqActive=false;
+function fmtT(d){if(!d)return'';return d.toLocaleTimeString('de-DE',{hour:'2-digit',minute:'2-digit'});}
+function fmtD(d){if(!d)return'';return d.toLocaleDateString('de-DE',{day:'2-digit',month:'2-digit',year:'numeric'});}
+function buildMsgSidebar(){const list=document.getElementById('msgChatList');list.innerHTML='';MSG_CHATS.forEach(c=>{const div=document.createElement('div');div.className='msgChatItem'+(activeChat===c.id?' active':'');div.id='msgchat-'+c.id;div.innerHTML=`<div class="msgChatAvatar" style="background:${c.color}">${c.icon}</div><div class="msgChatInfo"><div class="msgChatName">${c.name}</div><div class="msgChatPreview">${c.id==='system'?'Willkommen bei JulianOS!':'Guten Tag. Ich bin die AI...'}</div></div><div class="msgChatTime">${c.id==='system'?fmtT(loginTime):''}</div>`;div.onclick=()=>openChat(c.id);list.appendChild(div);});}
+function openChat(id){activeChat=id;document.querySelectorAll('.msgChatItem').forEach(el=>el.classList.remove('active'));const el=document.getElementById('msgchat-'+id);if(el)el.classList.add('active');const c=MSG_CHATS.find(x=>x.id===id);if(c){document.getElementById('msgChatHeaderAvatar').textContent=c.icon;document.getElementById('msgChatHeaderAvatar').style.background=c.color;document.getElementById('msgChatHeaderName').textContent=c.name;document.getElementById('msgChatHeaderSub').textContent=id==='system'?'Offizieller System-Kanal':'Ende-zu-Ende verschlüsselt';}document.getElementById('msgInputRow').style.display=id==='ai'?'flex':'none';renderChat(id);}
+function renderChat(id){const body=document.getElementById('msgBody');body.innerHTML='';faqActive=false;if(id==='system'){const dd=document.createElement('div');dd.className='msgDateDivider';dd.textContent=fmtD(loginTime)||'Heute';body.appendChild(dd);const enc=document.createElement('div');enc.className='encryptNotice';enc.innerHTML='🔒 Nachrichten in diesem Chat sind Ende-zu-Ende verschlüsselt.';body.appendChild(enc);const b=document.createElement('div');b.className='msgBubble system';b.innerHTML=`Willkommen bei JulianOS! 👋<br><br>In dieser Nachrichten-App informieren wir dich über die neusten Aktionen und Systemereignisse.<br><br>Viel Spaß mit deinem System!<div class="msgTime">${fmtT(loginTime)} ✓✓</div>`;body.appendChild(b);}else{const enc=document.createElement('div');enc.className='encryptNotice';enc.innerHTML='<span>🔐</span>Nachrichten in diesem Chat sind verschlüsselt.';body.appendChild(enc);chatHistory.ai.forEach(msg=>{const b=document.createElement('div');b.className='msgBubble '+(msg.role==='user'?'user':'ai');b.innerHTML=msg.text+'<div class="msgTime">'+fmtT(msg.time)+' ✓✓</div>';body.appendChild(b);});body.scrollTop=body.scrollHeight;}}
+function addAiMsg(text,role){const now=new Date();chatHistory.ai.push({role,text,time:now});if(activeChat==='ai'){const body=document.getElementById('msgBody');const b=document.createElement('div');b.className='msgBubble '+(role==='user'?'user':'ai');b.innerHTML=text+'<div class="msgTime">'+fmtT(now)+' ✓✓</div>';body.appendChild(b);body.scrollTop=body.scrollHeight;}}
+function showFaq(){if(faqActive)return;faqActive=true;const body=document.getElementById('msgBody');const w=document.createElement('div');w.className='aiFaqWidget';w.id='aiFaqEl';w.innerHTML=`<div class="aiFaqTitle">Was ist dein Problem?</div>${FAQ_Q.map((q,i)=>`<div class="aiFaqOption" onclick="selFaq(${i})"><input type="radio" name="faq" id="faq${i}"><label for="faq${i}">${q}</label></div>`).join('')}<button class="aiFaqSend" onclick="submitFaq()">Absenden</button>`;body.appendChild(w);body.scrollTop=body.scrollHeight;}
+function selFaq(i){document.querySelectorAll('[name="faq"]').forEach((r,j)=>r.checked=j===i);}
+function submitFaq(){const sel=document.querySelector('[name="faq"]:checked');if(!sel)return;const i=parseInt(sel.value);const w=document.getElementById('aiFaqEl');if(w)w.remove();faqActive=false;addAiMsg(FAQ_Q[i],'user');setTimeout(()=>addAiMsg(FAQ_A[i],'ai'),700);}
+function sendMsg(){const inp=document.getElementById('msgInput');const t=inp.value.trim();if(!t)return;inp.value='';addAiMsg(t,'user');if(AI_GREET.test(t))setTimeout(()=>addAiMsg('Hallo. Wie kann ich Dir behilflich sein?','ai'),600);else if(AI_HOW.test(t))setTimeout(()=>addAiMsg('Ich bin die AI von JOS. Falls du Fragen hast, stelle sie gern.','ai'),600);else{setTimeout(()=>{addAiMsg('Ich habe deine Frage leider nicht verstanden. Vielleicht hilft dir eines dieser Themen?','ai');setTimeout(()=>showFaq(),300);},600);}}
+function initMessages(){chatHistory.ai=[];faqActive=false;chatHistory.ai.push({role:'ai',text:'Guten Tag. Ich bin die AI von JulianOS und beantworte dir gerne Fragen, falls du welche hast.',time:loginTime||new Date()});buildMsgSidebar();openChat('system');}
+
+// ══════════════════════════════════════════
+// BOOT / LOGIN
+// ══════════════════════════════════════════
+setTimeout(()=>{document.getElementById('boot').classList.add('hidden');document.getElementById('login').classList.remove('hidden');},2500);
+
+function handleLogin(){
+  if(localStorage.getItem('julianPwProtect')==='1'){
+    document.getElementById('login').style.display='none';
+    document.getElementById('pwOverlay').classList.remove('hidden');
+    document.getElementById('overlayPw').focus();
+  }else startOS();
+}
+function checkOverlayPw(){
+  const v=document.getElementById('overlayPw').value;
+  if(v===currentPassword){document.getElementById('pwOverlay').classList.add('hidden');startOS();}
+  else{const e=document.getElementById('overlayError');e.textContent='Passwort falsch';e.style.animation='none';e.offsetHeight;e.style.animation='shake .3s ease';document.getElementById('overlayPw').value='';document.getElementById('overlayPw').focus();}
+}
+
+function updateSettingsPwRow(){
+  const row=document.getElementById('settingPwRow'),wrap=document.getElementById('settingPwToggleWrap'),cb=document.getElementById('togglePwProtectSettings');
+  const area=document.getElementById('settingsPwChangeArea');
+  if(adminUnlocked){row.classList.remove('locked');wrap.classList.remove('disabled');cb.disabled=false;cb.checked=localStorage.getItem('julianPwProtect')==='1';cb.onchange=()=>{localStorage.setItem('julianPwProtect',cb.checked?'1':'0');document.getElementById('togglePwProtect').checked=cb.checked;updateVirusDashboard();};if(area)area.style.display='block';}
+  else{row.classList.add('locked');wrap.classList.add('disabled');cb.disabled=true;cb.checked=false;cb.onchange=null;if(area)area.style.display='none';}
+}
+
+function toggleSysMenu(){document.getElementById('sysMenu').classList.toggle('open');}
+document.addEventListener('click',e=>{const btn=document.getElementById('globalMenuBtn'),menu=document.getElementById('sysMenu');if(btn&&menu&&!btn.contains(e.target)&&!menu.contains(e.target))menu.classList.remove('open');});
+function sysMenuAction(a){document.getElementById('sysMenu').classList.remove('open');showConfirm(a);}
+function updateMenuBtnVisibility(){
+  const wins=['notes','game','store','settings','adminOptions','secret','messages','virus','browser','shader'];
+  const anyOpen=wins.some(id=>{const el=document.getElementById(id);return el&&el.style.display==='block';});
+  const btn=document.getElementById('globalMenuBtn');
+  if(anyOpen){btn.classList.add('hidden-btn');document.getElementById('sysMenu').classList.remove('open');}
+  else btn.classList.remove('hidden-btn');
+}
+let pendingAction=null;
+function showConfirm(a){pendingAction=a;const icon=document.getElementById('confirmIcon'),title=document.getElementById('confirmTitle'),text=document.getElementById('confirmText'),ok=document.getElementById('confirmOkBtn');if(a==='restart'){icon.textContent='↺';title.textContent='NEU STARTEN';text.textContent='Das System wird neu gestartet.\nAlle nicht gespeicherten Inhalte gehen verloren.';ok.textContent='Neu starten';ok.className='confirmBtnOk restart';}else{icon.textContent='⊗';title.textContent='ZURÜCKSETZEN';text.textContent='Alle Daten werden dauerhaft gelöscht.\nDieser Vorgang kann nicht rückgängig gemacht werden.';ok.textContent='Zurücksetzen';ok.className='confirmBtnOk reset';}document.getElementById('confirmOverlay').classList.add('show');}
+function closeConfirm(){document.getElementById('confirmOverlay').classList.remove('show');pendingAction=null;}
+function closeConfirmOutside(e){if(e.target===document.getElementById('confirmOverlay'))closeConfirm();}
+function doConfirmAction(){const a=pendingAction;closeConfirm();if(a==='restart')location.reload();else doReset();}
+function doReset(){
+  ['julianPwProtect','julianWallpaper','julianGameLimit','julianGameLimitMins','julianAdminPw','josVirusInstalled','josBrowserInstalled','josShaderInstalled','josShaderOn','julianNotesSaved'].forEach(k=>localStorage.removeItem(k));
+  getNotifApps().forEach(app=>localStorage.removeItem('julianNotif_'+app.id));
+  const bar=document.getElementById('resetBar'),inner=document.getElementById('resetBarInner');
+  bar.classList.add('active');inner.style.transition='none';inner.style.width='0';
+  setTimeout(()=>{inner.style.transition='width 1.4s cubic-bezier(.4,0,.2,1)';inner.style.width='100%';setTimeout(()=>{bar.classList.remove('active');location.reload();},1550);},60);
+}
+function loadPwSetting(){const on=localStorage.getItem('julianPwProtect')==='1';document.getElementById('togglePwProtect').checked=on;if(adminUnlocked)document.getElementById('togglePwProtectSettings').checked=on;return on;}
+function savePwSetting(){const on=document.getElementById('togglePwProtect').checked;localStorage.setItem('julianPwProtect',on?'1':'0');if(adminUnlocked)document.getElementById('togglePwProtectSettings').checked=on;updateVirusDashboard();}
+
+function startOS(){
+  document.getElementById('login').style.display='none';
+  document.getElementById('desktop').style.display='block';
+  loginTime=new Date();
+  loadPwSetting();updateSettingsPwRow();initWallpaperGrid();
+  gameSecondsUsed=loadGameUsed();
+  restoreInstalledApps();buildNotifSection();buildShop();initMessages();updateVirusDashboard();
+  initShader();
+  if(browserInstalled)renderBrowserHome();
+}
+
+document.addEventListener('keydown',e=>{
+  if(e.key==='Escape')closeConfirm();
+  if(e.key==='Enter'){
+    if(!document.getElementById('pwOverlay').classList.contains('hidden'))checkOverlayPw();
+    if(document.getElementById('adminPwGate').style.display!=='none'&&document.getElementById('adminOptions').style.display==='block')checkAdminGate();
+  }
+});
+
+// ══════════════════════════════════════════
+// WINDOWS
+// ══════════════════════════════════════════
+const winState={};
+const allWins=['notes','game','store','settings','adminOptions','messages','virus','browser','shader'];
+let zCtr=10,activeWin=null;
+
+function updateTaskIcon(id){const t=document.getElementById('task-'+id);if(!t)return;t.classList.remove('active','minimized');if(winState[id]==='open')t.classList.add('active');else if(winState[id]==='minimized')t.classList.add('minimized');}
+function openWindow(id){
+  const el=document.getElementById(id);if(!el)return;
+  el.style.display='block';winState[id]='open';zCtr++;el.style.zIndex=zCtr;activeWin=id;
+  updateTaskIcon(id);updateMenuBtnVisibility();
+  if(id==='notes')notesInit();
+  if(id==='adminOptions')showAdminGate();
+  if(id==='game'){const on=localStorage.getItem('julianGameLimit')==='1';if(on&&gameLimitMinutes){checkGameLock();if(!gameLocked)startGameTimer();}updateTimerBarVisibility();}
+  if(id==='virus')updateVirusDashboard();
+  if(id==='browser'&&browserInstalled&&!document.getElementById('browserBody').innerHTML.trim())renderBrowserHome();
+  if(id==='shader'){const cb=document.getElementById('shaderToggleCheckbox');if(cb)cb.checked=shaderOn;const sub=document.getElementById('shaderSubLabel');if(sub)sub.textContent=shaderOn?'Shader ist aktiv':'Shader ist deaktiviert';const badge=document.getElementById('shaderStatusBadge');if(badge){badge.textContent=shaderOn?'AN':'AUS';badge.className='shaderStatusBadge '+(shaderOn?'on':'off');}}
+}
+function minimizeWindow(id){const el=document.getElementById(id);if(!el)return;el.style.display='none';winState[id]='minimized';if(activeWin===id)activeWin=null;updateTaskIcon(id);updateMenuBtnVisibility();if(id==='game')stopGameTimer();}
+function closeWindow(id){const el=document.getElementById(id);if(!el)return;el.style.display='none';winState[id]='closed';if(activeWin===id)activeWin=null;updateTaskIcon(id);updateMenuBtnVisibility();if(id==='game')stopGameTimer();}
+function toggleWindow(id){
+  if(winState[id]==='open'){if(activeWin===id)minimizeWindow(id);else{zCtr++;document.getElementById(id).style.zIndex=zCtr;activeWin=id;updateTaskIcon(id);}}
+  else if(winState[id]==='minimized'){const el=document.getElementById(id);if(!el)return;el.style.display='block';winState[id]='open';zCtr++;el.style.zIndex=zCtr;activeWin=id;updateTaskIcon(id);updateMenuBtnVisibility();if(id==='adminOptions')showAdminGate();if(id==='game'){const on=localStorage.getItem('julianGameLimit')==='1';if(on&&gameLimitMinutes&&!gameLocked)startGameTimer();}}
+  else{openWindow(id);}
+}
+
+setInterval(()=>{document.getElementById('clock').textContent=new Date().toLocaleTimeString('de-DE');},1000);
+
+// ══════════════════════════════════════════
+// ACHIEVEMENTS
+// ══════════════════════════════════════════
+const ACHIEVEMENTS=[
+  {id:'a500', points:500,  icon:'⚡',name:'500 PUNKTE', sub:'Erster Meilenstein'},
+  {id:'a1000',points:1000, icon:'🔥',name:'1000 PUNKTE',sub:'Halbzeit zur Legende'},
+  {id:'a2000',points:2000, icon:'👑',name:'2000 PUNKTE',sub:'Absolute Legende'},
+  {id:'a3000',points:3000, icon:'💎',name:'3000 PUNKTE',sub:'Diamant-Status'},
+  {id:'a5000',points:5000, icon:'🌟',name:'5000 PUNKTE',sub:'Unaufhaltbar'},
+];
+const unlockedAchs=new Set();let panelVisible=false;
+function buildAchPanel(){const list=document.getElementById('achList');list.innerHTML='';ACHIEVEMENTS.forEach(a=>{const div=document.createElement('div');div.className='achItem'+(unlockedAchs.has(a.id)?' unlocked':'');div.id='ach-'+a.id;div.innerHTML=`<div class="achIcon">${unlockedAchs.has(a.id)?a.icon:'🔒'}</div><div class="achName">${a.name}</div><div class="achSub">${a.sub}</div>${!unlockedAchs.has(a.id)?`<div class="achLock">ab ${a.points} Punkten</div>`:''}`;list.appendChild(div);});}
+function checkAchievements(s){ACHIEVEMENTS.forEach(a=>{if(!unlockedAchs.has(a.id)&&s>=a.points){unlockedAchs.add(a.id);if(!panelVisible){panelVisible=true;document.getElementById('achievementPanel').classList.add('visible');}buildAchPanel();launchKonfetti();setTimeout(()=>{const el=document.getElementById('ach-'+a.id);if(el){el.style.boxShadow='0 0 30px rgba(0,200,255,.5)';setTimeout(()=>el.style.boxShadow='',1000);}},100);}});}
+
+// ══════════════════════════════════════════
+// KONFETTI
+// ══════════════════════════════════════════
+const kCanvas=document.getElementById('konfetti'),kCtx=kCanvas.getContext('2d');let kParts=[],kAnim=null;
+function launchKonfetti(){kCanvas.width=innerWidth;kCanvas.height=innerHeight;const cols=['#00c8ff','#b400ff','#00ff88','#ffcc00','#ff6600','#ff2222','#fff'];for(let i=0;i<180;i++)kParts.push({x:Math.random()*kCanvas.width,y:-10-Math.random()*200,w:6+Math.random()*8,h:4+Math.random()*6,color:cols[Math.floor(Math.random()*cols.length)],vx:(Math.random()-.5)*4,vy:2+Math.random()*4,rot:Math.random()*360,rotV:(Math.random()-.5)*6,life:1});if(!kAnim)animK();}
+function animK(){kCtx.clearRect(0,0,kCanvas.width,kCanvas.height);kParts=kParts.filter(p=>p.life>0.01);kParts.forEach(p=>{p.x+=p.vx;p.y+=p.vy;p.rot+=p.rotV;p.vy+=.08;p.life-=.008;kCtx.save();kCtx.globalAlpha=p.life;kCtx.translate(p.x,p.y);kCtx.rotate(p.rot*Math.PI/180);kCtx.fillStyle=p.color;kCtx.fillRect(-p.w/2,-p.h/2,p.w,p.h);kCtx.restore();});if(kParts.length>0)kAnim=requestAnimationFrame(animK);else{kAnim=null;kCtx.clearRect(0,0,kCanvas.width,kCanvas.height);}}
+
+// ══════════════════════════════════════════
+// GAME
+// ══════════════════════════════════════════
+let score=0,totalClicks=0;
+const gColors=['#ff2222','linear-gradient(135deg,#00c8ff,#b400ff)','#ff6600','#ffcc00','#00ff88','#00c8ff','#b400ff'];
+function getLevel(){if(score>=5000)return 6;if(score>=3000)return 5;if(score>=1000)return 4;if(score>=100)return 3;if(score>=50)return 2;if(score>=25)return 1;return 0;}
+function getPPC(){const l=getLevel();if(l>=6)return 10;if(l>=5)return 5;if(l>=4)return 4;if(l>=3)return 3;if(l>=2)return 2;return 1;}
+function renderTarget(){
+  const t=document.getElementById('clickTarget'),lvl=getLevel(),col=gColors[lvl===0?0:lvl===1?1:2+Math.floor(totalClicks/20)%(gColors.length-2)];
+  const isG=col.startsWith('linear'),gc=isG?'rgba(0,200,255,.6)':col,sh=`filter:drop-shadow(0 0 18px ${gc})`;
+  const gradDef=(id)=>isG?`<defs><linearGradient id="${id}" x1="0%" y1="0%" x2="100%" y2="100%"><stop offset="0%" stop-color="#00c8ff"/><stop offset="100%" stop-color="#b400ff"/></linearGradient></defs>`:'';
+  const fill=(id)=>isG?`url(#${id})`:col;
+  if(lvl<=1){t.style.cssText=`width:90px;height:90px;border-radius:12px;background:${col};${sh};transition:transform .08s,filter .15s`;t.innerHTML='';}
+  else if(lvl===2){t.style.cssText=`width:110px;height:110px;${sh};transition:transform .08s,filter .15s;background:transparent`;t.innerHTML=`<svg viewBox="0 0 100 100" width="110" height="110">${gradDef('g1')}<polygon points="50,5 95,95 5,95" fill="${fill('g1')}"/></svg>`;}
+  else if(lvl===3){t.style.cssText=`width:110px;height:110px;${sh};transition:transform .08s,filter .15s;background:transparent`;t.innerHTML=`<svg viewBox="0 0 100 100" width="110" height="110">${gradDef('g2')}<circle cx="50" cy="50" r="46" fill="${fill('g2')}"/></svg>`;}
+  else if(lvl===4){t.style.cssText=`width:120px;height:120px;${sh};transition:transform .08s,filter .15s;background:transparent`;const pts=Array.from({length:5},(_,i)=>{const a=(Math.PI*2*i/5)-Math.PI/2;return`${50+46*Math.cos(a)},${50+46*Math.sin(a)}`;}).join(' ');t.innerHTML=`<svg viewBox="0 0 100 100" width="120" height="120">${gradDef('g3')}<polygon points="${pts}" fill="${fill('g3')}"/></svg>`;}
+  else if(lvl===5){t.style.cssText=`width:140px;height:90px;${sh};transition:transform .08s,filter .15s;background:transparent`;t.innerHTML=`<svg viewBox="0 0 140 90" width="140" height="90">${gradDef('g4')}<ellipse cx="70" cy="45" rx="67" ry="42" fill="${fill('g4')}"/></svg>`;}
+  else{t.style.cssText=`width:180px;height:72px;${sh};transition:transform .08s,filter .15s;background:transparent`;t.innerHTML=`<svg viewBox="0 0 180 72" width="180" height="72">${gradDef('g5')}<rect x="4" y="4" width="172" height="64" rx="16" fill="${fill('g5')}"/></svg>`;}
+  document.getElementById('ptsPerClick').textContent=`+${getPPC()} pro Klick`;
+  document.getElementById('levelBadge').textContent=['Level 1 · Kästchen','Level 2 · Kästchen','Level 3 · Dreieck','Level 4 · Kreis','Level 5 · Fünfeck','Level 6 · Oval','Level 7 · Rechteck'][Math.min(lvl,6)];
+}
+function updateScoreDisplay(){document.getElementById('scoreNum').textContent=score;}
+function gameClick(){
+  if(gameLocked)return;
+  score+=getPPC();totalClicks++;
+  const n=document.getElementById('scoreNum');n.textContent=score;n.classList.remove('pop');n.offsetHeight;n.classList.add('pop');setTimeout(()=>n.classList.remove('pop'),120);
+  renderTarget();checkAchievements(score);updateShopVisibility();buildShop();
+}
+
+// ══════════════════════════════════════════
+// INIT
+// ══════════════════════════════════════════
+buildAchPanel();renderTarget();buildShop();updateSettingsPwRow();
+</script>
+</body>
+</html>
